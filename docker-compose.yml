@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - CHOKIDAR_USEPOLLING=true # giúp file watch trên Windows
+      - BROWSER=none # tránh container mở trình duyệt
+    volumes:
+      - ./frontend:/app # mount source vào container (hot reload)
+      - /app/node_modules # tránh ghi node_modules của host lên container
