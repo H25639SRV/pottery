@@ -1,42 +1,42 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { AppProvider } from "./context/AppContext";
+import Home from "./pages/Home";
 import Login from "./components/Login";
-import ProductList from "./components/ProductList";
 import Cart from "./components/Cart";
-import { getProducts, addToCart, getCart, checkout } from "./api/api";
-import { Product, CartItem, User } from "./types";
+import Checkout from "./pages/Checkout";
+import Orders from "./pages/Orders";
 
-function App() {
-  const [user, setUser] = useState<User | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
-
-  useEffect(() => {
-    getProducts().then(setProducts);
-  }, []);
-
-  const handleAddToCart = async (product: Product) => {
-    const updatedCart = await addToCart(product);
-    setCart(updatedCart);
-  };
-
-  const handleCheckout = async () => {
-    const msg = await checkout();
-    alert(msg);
-    setCart([]);
-  };
-
-  if (!user) {
-    return <Login onLogin={setUser} />;
-  }
-
+const App: React.FC = () => {
   return (
-    <div>
-      <h1>Xin chào {user.email}</h1>
-      <button onClick={() => setUser(null)}>Đăng xuất</button>
-      <ProductList products={products} onAddToCart={handleAddToCart} />
-      <Cart cart={cart} onCheckout={handleCheckout} />
-    </div>
+    <AppProvider>
+      <Router>
+        <nav style={{ padding: 12 }}>
+          <Link to="/" style={{ marginRight: 8 }}>
+            Home
+          </Link>
+          <Link to="/login" style={{ marginRight: 8 }}>
+            Login
+          </Link>
+          <Link to="/cart" style={{ marginRight: 8 }}>
+            Cart
+          </Link>
+          <Link to="/checkout" style={{ marginRight: 8 }}>
+            Checkout
+          </Link>
+          <Link to="/orders">Orders</Link>
+        </nav>
+
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/orders" element={<Orders />} />
+        </Routes>
+      </Router>
+    </AppProvider>
   );
-}
+};
 
 export default App;

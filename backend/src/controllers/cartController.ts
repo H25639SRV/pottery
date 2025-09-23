@@ -1,25 +1,50 @@
-import { Response } from "express";
-import { pool } from "../db";
-import { AuthRequest } from "../middleware/authMiddleware";
+// src/controllers/cartController.ts
+import { Request, Response } from "express";
+import * as cartService from "../services/cartService";
 
-export const getCart = async (req: AuthRequest, res: Response) => {
-  const result = await pool.query(
-    "SELECT c.id, p.name, p.price, c.quantity FROM cart c JOIN products p ON c.product_id = p.id WHERE c.user_id=$1",
-    [req.user?.id]
-  );
-  res.json(result.rows);
+export const getCart = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const cart = await cartService.getCartByUser(userId);
+    res.json(cart || { items: [] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch cart" });
+  }
 };
 
-export const addToCart = async (req: AuthRequest, res: Response) => {
-  const { product_id, quantity } = req.body;
-  const result = await pool.query(
-    "INSERT INTO cart(user_id, product_id, quantity) VALUES($1,$2,$3) RETURNING *",
-    [req.user?.id, product_id, quantity]
-  );
-  res.json(result.rows[0]);
+export const addToCart = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { productId, quantity } = req.body;
+    if (!productId || !quantity)
+      return res.status(400).json({ error: "productId and quantity required" });
+
+    const item = await cartService.addOrUpdateCartItem(
+      userId,
+      Number(productId),
+      Number(quantity)
+    );
+    res.json(item);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to add item to cart" });
+  }
 };
 
-export const checkout = async (req: AuthRequest, res: Response) => {
-  await pool.query("DELETE FROM cart WHERE user_id=$1", [req.user?.id]);
-  res.json({ message: "Thanh toán thành công!" });
+export const removeFromCart = async (req: Request, res: Response) => {
+  try {
+    const { itemId } = req.params;
+    if (!itemId) return res.status(400).json({ error: "itemId required" });
+
+    await cartService.removeCartItem(Number(itemId));
+    res.json({ message: "Item removed" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to remove item" });
+  }
 };

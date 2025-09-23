@@ -1,40 +1,42 @@
 import React, { useState } from "react";
-import { login } from "../api/api";
-import { User } from "../types";
+import { useAppContext } from "../context/AppContext";
 
-interface Props {
-  onLogin: (user: User) => void;
-}
-
-const Login: React.FC<Props> = ({ onLogin }) => {
-  const [email, setEmail] = useState("");
+const Login: React.FC = () => {
+  const { login, logout, user } = useAppContext();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const user = await login(email, password);
-    onLogin(user);
+  const handleLogin = () => {
+    // Giả sử gọi API thành công -> nhận được token
+    const fakeToken = "jwt-token-demo";
+    login(fakeToken, username);
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Đăng nhập</h2>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <br />
-      <input
-        type="password"
-        placeholder="Mật khẩu"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <br />
-      <button type="submit">Đăng nhập</button>
-    </form>
+    <div>
+      {user ? (
+        <div>
+          <p>Xin chào, {user.username}</p>
+          <button onClick={logout}>Đăng xuất</button>
+        </div>
+      ) : (
+        <div>
+          <input
+            type="text"
+            placeholder="Tên đăng nhập"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <input
+            type="password"
+            placeholder="Mật khẩu"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button onClick={handleLogin}>Đăng nhập</button>
+        </div>
+      )}
+    </div>
   );
 };
 

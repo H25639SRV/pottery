@@ -1,4 +1,9 @@
 import { Product, CartItem, User } from "../types";
+import axios from "axios";
+
+const api = axios.create({
+  baseURL: "http://localhost:5000/api",
+});
 
 let mockProducts: Product[] = [
   {
@@ -39,3 +44,5 @@ export async function checkout(): Promise<string> {
   cart = [];
   return "Thanh toán thành công!";
 }
+
+export default api;

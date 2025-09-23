@@ -1,18 +1,15 @@
-# frontend/Dockerfile (development)
-FROM node:18-alpine
+# Build stage
+FROM node:18 AS build
 WORKDIR /app
-
-# Copy package files first to cache install step
 COPY package*.json ./
-
-# Install deps
 RUN npm install
-
-# Copy rest of source
 COPY . .
+RUN npm run build
 
-# Expose dev port
+# Production stage
+FROM node:18
+WORKDIR /app
+COPY --from=build /app/build ./build
+RUN npm install -g serve
 EXPOSE 3000
-
-# Use npm start (create-react-app default)
-CMD ["npm", "start"]
+CMD ["serve", "-s", "build"]

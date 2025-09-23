@@ -1,23 +1,29 @@
 import React from "react";
-import { CartItem } from "../types";
+import { useAppContext } from "../context/AppContext";
 
-interface Props {
-  cart: CartItem[];
-  onCheckout: () => void;
-}
+const Cart: React.FC = () => {
+  const { cart, removeFromCart, clearCart } = useAppContext();
 
-const Cart: React.FC<Props> = ({ cart, onCheckout }) => (
-  <div>
-    <h2>Giỏ hàng</h2>
-    <ul>
-      {cart.map((item, i) => (
-        <li key={i}>
-          {item.product.name} x {item.quantity}
-        </li>
-      ))}
-    </ul>
-    <button onClick={onCheckout}>Thanh toán</button>
-  </div>
-);
+  return (
+    <div>
+      <h2>Giỏ hàng</h2>
+      {cart.length === 0 ? (
+        <p>Giỏ hàng trống</p>
+      ) : (
+        <>
+          <ul>
+            {cart.map((item) => (
+              <li key={item.id}>
+                {item.name} - ${item.price}
+                <button onClick={() => removeFromCart(item.id)}>Xóa</button>
+              </li>
+            ))}
+          </ul>
+          <button onClick={clearCart}>Xóa tất cả</button>
+        </>
+      )}
+    </div>
+  );
+};
 
 export default Cart;

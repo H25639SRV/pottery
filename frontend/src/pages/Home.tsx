@@ -1,10 +1,11 @@
 import React from "react";
+import ProductList from "../components/ProductList";
 
 const Home: React.FC = () => {
   return (
     <div>
-      <h2>Welcome to Plant Shop</h2>
-      {/* Hiển thị danh sách sản phẩm */}
+      <h1>Chào mừng đến Pottery Shop</h1>
+      <ProductList />
     </div>
   );
 };

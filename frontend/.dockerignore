@@ -1,4 +1,28 @@
+# Dependencies
 node_modules
-build
 npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+
+# Build outputs
+build
+dist
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Editor & OS
+.vscode
+.idea
 .DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
