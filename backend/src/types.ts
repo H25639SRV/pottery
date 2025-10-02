@@ -1,13 +1,20 @@
+// src/types.ts
+
 export interface Product {
   id: number;
   name: string;
   price: number;
-  image_url: string;
-  description?: string;
+  image: string;
 }
 
-export interface User {
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
+export interface Order {
   id: number;
-  email: string;
-  password: string; // hashed
+  items: CartItem[];
+  total: number;
+  createdAt: string; // ISO string
 }

@@ -13,6 +13,14 @@ export interface CartItem {
 
 export interface User {
   id: number;
+  username: string;
   email: string;
   token: string;
+}
+
+export interface Order {
+  id: number;
+  items: CartItem[];
+  total: number;
+  createdAt: string; // ISO string
 }

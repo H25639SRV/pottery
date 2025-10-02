@@ -1,22 +1,25 @@
+// src/components/Login.tsx
 import React, { useState } from "react";
 import { useAppContext } from "../context/AppContext";
 
 const Login: React.FC = () => {
-  const { login, logout, user } = useAppContext();
+  const { login, user, logout } = useAppContext();
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
 
   const handleLogin = () => {
-    // Giả sử gọi API thành công -> nhận được token
-    const fakeToken = "jwt-token-demo";
-    login(fakeToken, username);
+    if (username && email) {
+      login(username, email);
+    }
   };
 
   return (
-    <div>
+    <div className="login-page">
       {user ? (
         <div>
-          <p>Xin chào, {user.username}</p>
+          <p>
+            Xin chào, {user.username} ({user.email})
+          </p>
           <button onClick={logout}>Đăng xuất</button>
         </div>
       ) : (
@@ -28,10 +31,10 @@ const Login: React.FC = () => {
             onChange={(e) => setUsername(e.target.value)}
           />
           <input
-            type="password"
-            placeholder="Mật khẩu"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
           <button onClick={handleLogin}>Đăng nhập</button>
         </div>

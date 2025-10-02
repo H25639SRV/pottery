@@ -1,43 +1,38 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 
 const Checkout: React.FC = () => {
-  const { cart, checkout } = useAppContext();
-  const navigate = useNavigate();
+  const { cart, saveOrder } = useAppContext();
+
+  const total = cart.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0
+  );
 
   const handleCheckout = () => {
-    if (cart.length === 0) {
-      alert("Giỏ hàng đang trống.");
-      return;
-    }
-    checkout();
-    navigate("/orders");
+    if (cart.length === 0) return;
+    saveOrder(cart, total);
+    alert("Đặt hàng thành công!");
   };
 
-  const total = cart.reduce((sum, p) => sum + p.price, 0);
-
   return (
-    <div style={{ padding: 16 }}>
+    <div>
       <h2>Thanh toán</h2>
-
       {cart.length === 0 ? (
-        <p>Giỏ hàng trống.</p>
+        <p>Không có sản phẩm để thanh toán.</p>
       ) : (
         <>
           <ul>
             {cart.map((item) => (
-              <li key={item.id}>
-                {item.name} — {item.price} VND
+              <li key={item.product.id}>
+                {item.product.name} — {item.product.price} VND × {item.quantity}
               </li>
             ))}
           </ul>
-
-          <p>
-            <strong>Tổng: {total} VND</strong>
-          </p>
-
-          <button onClick={handleCheckout}>Xác nhận & Thanh toán</button>
+          <div>
+            <strong>Tổng cộng:</strong> {total} VND
+          </div>
+          <button onClick={handleCheckout}>Xác nhận đặt hàng</button>
         </>
       )}
     </div>

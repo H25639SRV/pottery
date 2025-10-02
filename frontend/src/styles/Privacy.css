@@ -1,0 +1,15 @@
+.privacy-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 50px 20px;
+  background-color: #fff;
+  color: #333;
+  line-height: 1.8;
+}
+
+.privacy-page h1 {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 30px;
+  color: #222;
+}

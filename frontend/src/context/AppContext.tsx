@@ -1,111 +1,78 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
+import { CartItem, Order, Product, User } from "../types";
 
-export type Product = {
-  id: number;
-  name: string;
-  price: number;
-};
-
-type Order = {
-  id: string;
-  items: Product[];
-  total: number;
-  date: string;
-};
-
-type User = {
-  username: string;
-};
-
-type AppContextType = {
-  token: string | null;
+export interface AppContextType {
   user: User | null;
-  login: (token: string, username: string) => void;
-  logout: () => void;
-
-  cart: Product[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (id: number) => void;
-  clearCart: () => void;
-
+  cart: CartItem[];
   orders: Order[];
-  checkout: () => void;
-};
+  login: (email: string, password: string) => void;
+  logout: () => void;
+  addToCart: (product: Product) => void;
+  removeFromCart: (productId: number) => void;
+  saveOrder: (items: CartItem[], total: number) => void;
+}
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+const AppContext = createContext<AppContextType>({} as AppContextType);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem("token")
-  );
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem("user");
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [cart, setCart] = useState<Product[]>([]);
-  const [orders, setOrders] = useState<Order[]>(() => {
-    const saved = localStorage.getItem("orders");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
-  // Lưu token + user khi thay đổi
-  useEffect(() => {
-    if (token) localStorage.setItem("token", token);
-    else localStorage.removeItem("token");
-  }, [token]);
-
-  useEffect(() => {
-    if (user) localStorage.setItem("user", JSON.stringify(user));
-    else localStorage.removeItem("user");
-  }, [user]);
-
-  // Lưu orders
-  useEffect(() => {
-    localStorage.setItem("orders", JSON.stringify(orders));
-  }, [orders]);
-
-  const login = (tk: string, username: string) => {
-    setToken(tk);
-    setUser({ username });
+  // Fake login
+  const login = (email: string, password: string) => {
+    setUser({
+      id: 1,
+      username: email.split("@")[0], // đơn giản tách từ email
+      email,
+      token: "mock-token",
+    });
   };
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
+  const logout = () => setUser(null);
+
+  const addToCart = (product: Product) => {
+    setCart((prev) => {
+      const existing = prev.find((item) => item.product.id === product.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...prev, { product, quantity: 1 }];
+    });
   };
 
-  const addToCart = (product: Product) => setCart((prev) => [...prev, product]);
-  const removeFromCart = (id: number) =>
-    setCart((prev) => prev.filter((p) => p.id !== id));
-  const clearCart = () => setCart([]);
+  const removeFromCart = (productId: number) => {
+    setCart((prev) => prev.filter((item) => item.product.id !== productId));
+  };
 
-  const checkout = () => {
-    if (cart.length === 0) return;
+  const saveOrder = (items: CartItem[], total: number) => {
     const newOrder: Order = {
-      id: Math.random().toString(36).substring(2, 9),
-      items: cart,
-      total: cart.reduce((sum, p) => sum + p.price, 0),
-      date: new Date().toLocaleString(),
+      id: Date.now(),
+      items,
+      total,
+      createdAt: new Date().toISOString(),
     };
     setOrders((prev) => [...prev, newOrder]);
-    setCart([]);
+    setCart([]); // clear cart sau khi đặt hàng
   };
 
   return (
     <AppContext.Provider
       value={{
-        token,
         user,
+        cart,
+        orders,
         login,
         logout,
-        cart,
         addToCart,
         removeFromCart,
-        clearCart,
-        orders,
-        checkout,
+        saveOrder,
       }}
     >
       {children}
@@ -113,8 +80,4 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-export const useAppContext = () => {
-  const ctx = useContext(AppContext);
-  if (!ctx) throw new Error("useAppContext must be used inside AppProvider");
-  return ctx;
-};
+export const useAppContext = () => useContext(AppContext);
