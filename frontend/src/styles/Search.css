@@ -1,0 +1,28 @@
+.search-container {
+  text-align: center;
+  padding: 40px;
+}
+
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.search-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s;
+}
+
+.search-card:hover {
+  transform: translateY(-5px);
+}
+
+.search-card img {
+  width: 100%;
+  border-radius: 8px;
+}

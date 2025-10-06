@@ -1,34 +1,18 @@
-import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { pool } from "../db";
+import { generateToken } from "../utils/generateToken";
+import { Request, Response } from "express";
 
-export const register = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-  const hashed = await bcrypt.hash(password, 10);
-  await pool.query("INSERT INTO users(email, password) VALUES($1, $2)", [
-    email,
-    hashed,
-  ]);
-  res.json({ message: "Đăng ký thành công" });
-};
+const prisma = new PrismaClient();
 
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
-  const result = await pool.query("SELECT * FROM users WHERE email=$1", [
-    email,
-  ]);
-  const user = result.rows[0];
-  if (!user) return res.status(400).json({ error: "Sai tài khoản" });
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(400).json({ error: "Sai mật khẩu" });
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
-  const token = jwt.sign(
-    { id: user.id, email: user.email },
-    process.env.JWT_SECRET || "secret",
-    { expiresIn: "1h" }
-  );
-
-  res.json({ id: user.id, email: user.email, token });
+  const token = generateToken(user.id.toString(), user.role);
+  res.json({ token, role: user.role });
 };

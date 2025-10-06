@@ -1,31 +1,117 @@
 .navbar {
   display: flex;
-  gap: 16px;
-  padding: 12px;
-  background: #eee;
   align-items: center;
-}
-
-/* Xóa gạch chân và chỉnh style Link */
-.navbar a {
-  text-decoration: none;
-  color: #333;
-  font-weight: 500;
-}
-
-.navbar a:hover {
-  color: #c44;
-}
-
-.navbar button {
-  padding: 6px 12px;
-  background: #c44;
+  justify-content: space-between;
+  padding: 12px 60px;
+  background-color: #5e3820;
   color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.navbar button:hover {
-  background: #a22;
+.logo {
+  font-size: 1.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: white;
+}
+
+.navbar-center a {
+  color: white;
+  text-decoration: none;
+  margin: 0 18px;
+  font-weight: 500;
+  transition: opacity 0.3s;
+}
+
+.navbar-center a:hover {
+  opacity: 0.8;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* --- Search box --- */
+.search-box {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 20px;
+  padding: 4px 10px;
+  height: 32px;
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  font-size: 0.9rem;
+  margin-left: 6px;
+}
+
+.search-icon {
+  color: #5e3820;
+}
+
+/* --- Icons --- */
+.icon {
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.icon:hover {
+  transform: scale(1.1);
+}
+
+/* --- Dropdown giữ nguyên khi hover --- */
+/* Bọc icon + menu trong 1 vùng hover chung */
+.user-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* Dropdown menu */
+.dropdown-menu {
+  position: absolute;
+  top: 130%; /* đẩy menu xuống dưới icon */
+  right: 0;
+  background-color: #7b4f2a; /* nâu đất */
+  color: white;
+  border-radius: 8px;
+  min-width: 140px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  padding: 8px 0;
+  z-index: 1000;
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Link trong menu */
+.dropdown-menu a {
+  display: block;
+  padding: 10px 16px;
+  color: white;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.dropdown-menu a:hover {
+  background-color: #5a371d;
+}
+
+/* Nhỏ animation cho đẹp */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
