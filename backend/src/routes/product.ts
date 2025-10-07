@@ -6,17 +6,24 @@ import {
   updateProduct,
   deleteProduct,
 } from "../controllers/productController";
-import { authenticateToken, isAdmin } from "../middleware/authMiddleware";
+import { authenticateToken } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
-// Public routes
+// ✅ Public routes
 router.get("/", getProducts);
 router.get("/:id", getProductById);
 
-// Admin-only routes
-router.post("/", authenticateToken, isAdmin, createProduct);
-router.put("/:id", authenticateToken, isAdmin, updateProduct);
-router.delete("/:id", authenticateToken, isAdmin, deleteProduct);
+// ✅ Admin routes
+router.post("/", authenticateToken, checkAdminRole, createProduct);
+router.put("/:id", authenticateToken, checkAdminRole, updateProduct);
+router.delete("/:id", authenticateToken, checkAdminRole, deleteProduct);
+
+function checkAdminRole(req: any, res: any, next: any) {
+  if (req.user?.role !== "ADMIN") {
+    return res.status(403).json({ message: "Bạn không có quyền ADMIN" });
+  }
+  next();
+}
 
 export default router;

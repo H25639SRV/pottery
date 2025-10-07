@@ -2,113 +2,176 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 60px;
-  background-color: #5e3820;
+  background-color: #5a3e2b;
+  padding: 12px 40px;
   color: white;
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.logo {
-  font-size: 1.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  color: white;
+/* --- layout --- */
+.navbar-left {
+  flex: 1;
 }
 
-.navbar-center a {
-  color: white;
-  text-decoration: none;
-  margin: 0 18px;
-  font-weight: 500;
-  transition: opacity 0.3s;
-}
-
-.navbar-center a:hover {
-  opacity: 0.8;
+.navbar-center {
+  flex: 2;
+  display: flex;
+  justify-content: center;
+  gap: 40px;
 }
 
 .navbar-right {
+  flex: 1.5;
   display: flex;
+  justify-content: flex-end;
   align-items: center;
   gap: 18px;
 }
 
-/* --- Search box --- */
+/* --- logo --- */
+.navbar-logo {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #fffaf0;
+  text-decoration: none;
+  letter-spacing: 1px;
+}
+
+/* --- links --- */
+.navbar-link {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.navbar-link::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background-color: #ffddaa;
+  transition: width 0.3s ease;
+}
+
+.navbar-link:hover {
+  color: #ffddaa;
+}
+
+.navbar-link:hover::after {
+  width: 100%;
+}
+
+/* --- search --- */
 .search-box {
   display: flex;
   align-items: center;
-  background: #fff;
+  background-color: #7b573d;
   border-radius: 20px;
   padding: 4px 10px;
-  height: 32px;
+  overflow: hidden;
 }
 
 .search-box input {
+  background: transparent;
   border: none;
   outline: none;
-  font-size: 0.9rem;
-  margin-left: 6px;
+  color: white;
+  padding: 6px 8px;
+  width: 130px;
 }
 
-.search-icon {
-  color: #5e3820;
+.search-box input::placeholder {
+  color: #e2d1c3;
 }
 
-/* --- Icons --- */
+.search-box button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: white;
+}
+
+/* --- icon --- */
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: white;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.icon-btn:hover {
+  transform: scale(1.1);
+  color: #ffddaa;
+}
+
 .icon {
   font-size: 1.4rem;
-  cursor: pointer;
-  transition: transform 0.3s;
 }
 
-.icon:hover {
-  transform: scale(1.1);
-}
-
-/* --- Dropdown giữ nguyên khi hover --- */
-/* Bọc icon + menu trong 1 vùng hover chung */
-.user-dropdown-wrapper {
+/* --- dropdown --- */
+.user-menu {
   position: relative;
-  display: inline-block;
 }
 
-/* Dropdown menu */
 .dropdown-menu {
   position: absolute;
-  top: 130%; /* đẩy menu xuống dưới icon */
+  top: 45px;
   right: 0;
-  background-color: #7b4f2a; /* nâu đất */
-  color: white;
-  border-radius: 8px;
-  min-width: 140px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-  padding: 8px 0;
-  z-index: 1000;
-  opacity: 1;
-  transform: translateY(0);
-  transition: all 0.2s ease-in-out;
+  background-color: #5a3e2b;
+  border-radius: 10px;
+  padding: 10px 0;
+  min-width: 200px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.2s ease;
 }
 
-/* Link trong menu */
-.dropdown-menu a {
-  display: block;
+.dropdown-email {
+  color: #fff8e7;
   padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dropdown-email span {
+  font-size: 0.85rem;
+  color: #ffe9c6;
+}
+
+.dropdown-item {
+  width: 100%;
+  background: none;
+  border: none;
   color: white;
-  text-decoration: none;
+  text-align: left;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 0.95rem;
   transition: background 0.2s ease;
+  text-decoration: none;
 }
 
-.dropdown-menu a:hover {
-  background-color: #5a371d;
+.dropdown-item:hover {
+  background-color: #7b573d;
 }
 
-/* Nhỏ animation cho đẹp */
+.logout-btn {
+  color: #ffdddd;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(-5px);
+    transform: translateY(-6px);
   }
   to {
     opacity: 1;

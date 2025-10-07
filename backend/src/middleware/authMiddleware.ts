@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 interface JwtPayload {
   userId: string;
@@ -12,24 +15,20 @@ export const authenticateToken = (
   next: NextFunction
 ) => {
   const authHeader = req.headers["authorization"];
-  const token = authHeader?.split(" ")[1];
+  const token = authHeader && authHeader.split(" ")[1];
 
-  if (!token) return res.status(401).json({ message: "No token provided" });
+  if (!token) {
+    return res.status(401).json({ message: "No token provided" });
+  }
 
   try {
-    const secret = process.env.JWT_SECRET || "secret";
+    const secret = process.env.JWT_SECRET || "default_secret";
     const decoded = jwt.verify(token, secret) as JwtPayload;
+
+    // ✅ Lưu thông tin user vào request
     (req as any).user = decoded;
     next();
-  } catch (err) {
-    return res.status(403).json({ message: "Invalid token" });
+  } catch (error) {
+    return res.status(403).json({ message: "Invalid or expired token" });
   }
-};
-
-export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  const user = (req as any).user;
-  if (user?.role !== "ADMIN") {
-    return res.status(403).json({ message: "Access denied: Admin only" });
-  }
-  next();
 };

@@ -14,12 +14,12 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
   password  String
-  role      String   @default("USER")
-  createdAt DateTime @default(now())
-  products  Product[]
+  role      String    @default("USER")
+  createdAt DateTime  @default(now())
+  products  Product[] // Một user có thể có nhiều product
 }
 
 model Product {
@@ -27,12 +27,14 @@ model Product {
   name        String
   description String?
   price       Float
-  image       String?   // 👈 cột này đang bị thiếu trong DB
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  image       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 🔧 Thêm hai dòng này để định nghĩa quan hệ ngược lại với User
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
 }
-
-
 
 enum Role {
   ADMIN

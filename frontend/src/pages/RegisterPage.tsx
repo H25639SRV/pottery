@@ -1,20 +1,56 @@
-// src/pages/RegisterPage.tsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../styles/Auth.css";
 
 const RegisterPage: React.FC = () => {
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleRegister = () => {
-    if (username && email && password) {
-      console.log("Đăng ký:", { username, email, password });
-      alert("Đăng ký thành công!");
-    } else {
+  const handleRegister = async () => {
+    if (!email || !password || !confirmPassword) {
       alert("Vui lòng nhập đầy đủ thông tin!");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      alert("Mật khẩu xác nhận không khớp!");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          role: "USER", // ✅ mặc định đăng ký là USER
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || "Đăng ký thất bại!");
+        return;
+      }
+
+      alert("Đăng ký thành công!");
+
+      // ✅ Sau khi đăng ký thành công: chuyển hướng sang login
+      navigate("/login");
+      // hoặc: navigate("/"); // nếu muốn về trang chủ luôn
+    } catch (err) {
+      console.error("Lỗi đăng ký:", err);
+      alert("Đã xảy ra lỗi, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -40,27 +76,36 @@ const RegisterPage: React.FC = () => {
 
         <div className="auth-container">
           <h2 className="auth-title">Đăng ký tài khoản</h2>
-          <input
-            type="text"
-            placeholder="Tên đăng nhập"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
+
           <input
             type="email"
             placeholder="Địa chỉ email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+
           <input
             type="password"
             placeholder="Mật khẩu"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <button className="auth-btn" onClick={handleRegister}>
-            Đăng ký
+
+          <input
+            type="password"
+            placeholder="Xác nhận mật khẩu"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+
+          <button
+            className="auth-btn"
+            onClick={handleRegister}
+            disabled={loading}
+          >
+            {loading ? "Đang đăng ký..." : "Đăng ký"}
           </button>
+
           <p className="auth-switch">
             Đã có tài khoản? <Link to="/login">Đăng nhập ngay</Link>
           </p>

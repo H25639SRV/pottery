@@ -6,6 +6,7 @@ import Product from "./pages/Product";
 import Privacy from "./pages/Privacy";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import AdminProductPage from "./pages/AdminProductPage";
 
 const App: React.FC = () => {
   return (
@@ -14,6 +15,7 @@ const App: React.FC = () => {
         <Route path="/" element={<Home />} />
         <Route path="/product" element={<Product />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/admin/edit" element={<AdminProductPage />} />
       </Route>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />

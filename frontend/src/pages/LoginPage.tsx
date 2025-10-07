@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import "../styles/Auth.css";
 
 const LoginPage: React.FC = () => {
@@ -9,6 +10,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth(); // ✅ Lấy hàm login từ AuthContext
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -31,9 +33,8 @@ const LoginPage: React.FC = () => {
         return;
       }
 
-      // ✅ Lưu token & role vào localStorage
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.role);
+      // ✅ Lưu thông tin vào context (và cookie tự động)
+      login(data.token, data.role, email);
 
       alert("Đăng nhập thành công!");
       navigate("/"); // về trang chủ
