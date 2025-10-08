@@ -6,6 +6,7 @@ import "../styles/Auth.css";
 const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ const RegisterPage: React.FC = () => {
         body: JSON.stringify({
           email,
           password,
+          username,
           role: "USER", // ✅ mặc định đăng ký là USER
         }),
       });
@@ -76,7 +78,12 @@ const RegisterPage: React.FC = () => {
 
         <div className="auth-container">
           <h2 className="auth-title">Đăng ký tài khoản</h2>
-
+          <input
+            type="text"
+            placeholder="Tên người dùng"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
           <input
             type="email"
             placeholder="Địa chỉ email"

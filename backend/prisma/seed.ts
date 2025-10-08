@@ -1,38 +1,57 @@
+// backend/prisma/seed.ts
 import { PrismaClient } from "@prisma/client";
-import * as bcrypt from "bcryptjs";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Mã hoá mật khẩu
-  const passwordAdmin = await bcrypt.hash("11111", 10);
-  const passwordGuest = await bcrypt.hash("11111", 10);
-
-  // Xoá toàn bộ dữ liệu cũ
-  await prisma.user.deleteMany();
+  // xóa dữ liệu cũ an toàn (cẩn thận nếu có dữ liệu muốn giữ)
+  await prisma.cartItem.deleteMany();
+  await prisma.cart.deleteMany();
   await prisma.product.deleteMany();
+  await prisma.user.deleteMany();
 
-  // Tạo tài khoản admin
+  const hashed = await bcrypt.hash("11111", 10);
+
+  // tạo admin và guest với username
   const admin = await prisma.user.create({
     data: {
+      username: "H25639SRV",
       email: "h25639srv@gmail.com",
-      password: passwordAdmin,
-      role: "ADMIN", // nhớ có field này trong schema.prisma
+      password: hashed,
+      role: "ADMIN",
     },
   });
 
-  // Tạo tài khoản khách
   const guest = await prisma.user.create({
     data: {
+      username: "guest",
       email: "toilagay@gmail.com",
-      password: passwordGuest,
+      password: hashed,
       role: "USER",
     },
   });
 
-  console.log("✅ Seed thành công!");
-  console.log("Admin:", admin.email);
-  console.log("Guest:", guest.email);
+  // tạo 1 product mẫu
+  await prisma.product.create({
+    data: {
+      name: "Bình Gốm Trắng",
+      description: "Bình gốm trang trí handmade, đường kính 12cm.",
+      price: 25.5,
+      image: null,
+      stock: 10,
+      userId: admin.id, // optional
+    },
+  });
+
+  // tạo cart cho guest
+  await prisma.cart.create({
+    data: {
+      userId: guest.id,
+    },
+  });
+
+  console.log("Seeding completed.");
 }
 
 main()

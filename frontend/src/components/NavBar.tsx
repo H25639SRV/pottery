@@ -16,6 +16,10 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Lấy username từ localStorage (được lưu khi login)
+  const username = localStorage.getItem("username");
+
+  // Toggle dropdown khi click vào icon user
   const toggleDropdown = () => setShowDropdown((prev) => !prev);
 
   // Ẩn dropdown khi click ra ngoài
@@ -28,6 +32,7 @@ const Navbar: React.FC = () => {
         setShowDropdown(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -67,7 +72,7 @@ const Navbar: React.FC = () => {
         </Link>
       </div>
 
-      {/* bên phải: search + cart + user */}
+      {/* Bên phải: search + cart + user */}
       <div className="navbar-right">
         <form onSubmit={handleSearch} className="search-box">
           <input
@@ -87,18 +92,22 @@ const Navbar: React.FC = () => {
 
         {token ? (
           <div className="user-menu" ref={dropdownRef}>
-            <button className="icon-btn" onClick={toggleDropdown}>
+            {/* Hiển thị icon + lời chào */}
+            <div className="user-info" onClick={toggleDropdown}>
               <UserIcon className="icon" />
-            </button>
+              <span className="greeting">
+                Xin chào{" "}
+                <b>{role === "ADMIN" ? "Quản trị viên" : "Người dùng"}</b>{" "}
+                {username && <span>{username}</span>}
+              </span>
+            </div>
 
             {showDropdown && (
-              <div className="dropdown-menu">
-                <p className="dropdown-email">
-                  {role === "ADMIN" ? "Quản trị viên" : "Người dùng"}
-                  <br />
-                  <span>{email}</span>
-                </p>
-
+              <div
+                className="dropdown-menu"
+                onMouseEnter={() => setShowDropdown(true)}
+                onMouseLeave={() => setShowDropdown(false)}
+              >
                 {role === "ADMIN" && (
                   <Link to="/admin/edit" className="dropdown-item">
                     Chỉnh sửa sản phẩm

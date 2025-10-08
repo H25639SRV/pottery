@@ -10,7 +10,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth(); // ✅ Lấy hàm login từ AuthContext
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -33,11 +33,16 @@ const LoginPage: React.FC = () => {
         return;
       }
 
-      // ✅ Lưu thông tin vào context (và cookie tự động)
-      login(data.token, data.role, email);
+      // ✅ Lưu thông tin vào context
+      login({
+        token: data.token,
+        role: data.role,
+        email: data.email,
+        username: data.username,
+      });
 
-      alert("Đăng nhập thành công!");
-      navigate("/"); // về trang chủ
+      alert(`Xin chào ${data.username}!`);
+      navigate("/"); // chuyển về trang chủ
     } catch (err) {
       console.error("Lỗi đăng nhập:", err);
       alert("Đã xảy ra lỗi, vui lòng thử lại!");

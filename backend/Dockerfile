@@ -15,7 +15,7 @@ RUN npm install
 COPY . .
 
 # Sinh Prisma Client
-RUN npx prisma generate
+RUN npx prisma generate --schema=./prisma/schema.prisma
 
 # Build TypeScript
 RUN npm run build

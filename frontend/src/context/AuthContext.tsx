@@ -1,65 +1,76 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import Cookies from "js-cookie";
 
 interface AuthContextType {
   token: string | null;
   role: string | null;
   email: string | null;
-  login: (token: string, role: string, email: string) => void;
+  username: string | null;
+  login: (data: any) => void;
   logout: () => void;
+  loading: boolean; // ✅ thêm vào để biết khi nào context load xong
 }
 
 const AuthContext = createContext<AuthContextType>({
   token: null,
   role: null,
   email: null,
+  username: null,
   login: () => {},
   logout: () => {},
+  loading: true, // ✅ mặc định đang tải
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [token, setToken] = useState<string | null>(
-    Cookies.get("token") || null
-  );
-  const [role, setRole] = useState<string | null>(Cookies.get("role") || null);
-  const [email, setEmail] = useState<string | null>(
-    Cookies.get("email") || null
-  );
+  const [token, setToken] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true); // ✅ thêm trạng thái loading
 
-  const login = (token: string, role: string, email: string) => {
-    setToken(token);
-    setRole(role);
-    setEmail(email);
-    Cookies.set("token", token, { expires: 7 });
-    Cookies.set("role", role, { expires: 7 });
-    Cookies.set("email", email, { expires: 7 });
+  const login = (data: any) => {
+    setToken(data.token);
+    setRole(data.role);
+    setEmail(data.email);
+    setUsername(data.username);
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("role", data.role);
+    localStorage.setItem("email", data.email);
+    localStorage.setItem("username", data.username);
   };
 
   const logout = () => {
     setToken(null);
     setRole(null);
     setEmail(null);
-    Cookies.remove("token");
-    Cookies.remove("role");
-    Cookies.remove("email");
+    setUsername(null);
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("email");
+    localStorage.removeItem("username");
   };
 
-  // ✅ Giữ session khi F5
   useEffect(() => {
-    const savedToken = Cookies.get("token");
-    const savedRole = Cookies.get("role");
-    const savedEmail = Cookies.get("email");
-    if (savedToken && savedRole && savedEmail) {
-      setToken(savedToken);
-      setRole(savedRole);
-      setEmail(savedEmail);
-    }
+    // đảm bảo đồng bộ khi reload
+    const storedToken = localStorage.getItem("token");
+    const storedRole = localStorage.getItem("role");
+    const storedEmail = localStorage.getItem("email");
+    const storedUsername = localStorage.getItem("username");
+
+    setToken(storedToken);
+    setRole(storedRole);
+    setEmail(storedEmail);
+    setUsername(storedUsername);
+    setLoading(false); // ✅ đánh dấu đã load xong
   }, []);
 
   return (
-    <AuthContext.Provider value={{ token, role, email, login, logout }}>
+    <AuthContext.Provider
+      value={{ token, role, email, username, login, logout, loading }}
+    >
       {children}
     </AuthContext.Provider>
   );

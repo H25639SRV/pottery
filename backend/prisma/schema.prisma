@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,30 +7,60 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/*
+  User: có username (tuỳ chọn), email (unique), password, role
+  Product: có stock field
+  Cart & CartItem: để lưu giỏ hàng
+*/
+
 model User {
   id        Int       @id @default(autoincrement())
+  username  String
   email     String    @unique
   password  String
   role      String    @default("USER")
   createdAt DateTime  @default(now())
-  products  Product[] // Một user có thể có nhiều product
+  updatedAt DateTime  @updatedAt
+
+  // Quan hệ
+  carts     Cart[]
+  products  Product[] // nếu bạn muốn liên kết sản phẩm với user (nếu không dùng, có thể bỏ)
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   name        String
   description String?
   price       Float
   image       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  stock       Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
-  // 🔧 Thêm hai dòng này để định nghĩa quan hệ ngược lại với User
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
+  // Nếu bạn muốn product gắn với user (người tạo) — để dùng thì bật userId/user
+  userId      Int? 
+  user        User?      @relation(fields: [userId], references: [id])
+
+  // Cart items relation
+  cartItems   CartItem[]
 }
 
-enum Role {
-  ADMIN
-  USER
+model Cart {
+  id         Int        @id @default(autoincrement())
+  userId     Int
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id])
+  items      CartItem[]
+}
+
+model CartItem {
+  id         Int        @id @default(autoincrement())
+  cartId     Int
+  productId  Int
+  quantity   Int        @default(1)
+
+  cart       Cart       @relation(fields: [cartId], references: [id])
+  product    Product    @relation(fields: [productId], references: [id])
 }
