@@ -2,27 +2,27 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaSearch, FaUser, FaShoppingCart } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
 import "../styles/NavBar.css";
 
-// Giữ nguyên cấu trúc icon
+// ✅ Giữ nguyên icon
 const SearchIcon = FaSearch as React.ElementType;
 const UserIcon = FaUser as React.ElementType;
 const CartIcon = FaShoppingCart as React.ElementType;
 
 const Navbar: React.FC = () => {
-  const { token, role, email, logout } = useAuth();
+  const { token, role, logout } = useAuth();
+  const { cart } = useCart();
   const [showDropdown, setShowDropdown] = useState(false);
-  const [search, setSearch] = useState("");
+  const [query, setQuery] = useState("");
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Lấy username từ localStorage (được lưu khi login)
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const username = localStorage.getItem("username");
 
-  // Toggle dropdown khi click vào icon user
   const toggleDropdown = () => setShowDropdown((prev) => !prev);
 
-  // Ẩn dropdown khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -32,7 +32,6 @@ const Navbar: React.FC = () => {
         setShowDropdown(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -42,21 +41,23 @@ const Navbar: React.FC = () => {
     navigate("/");
   };
 
+  // ✅ Khi tìm kiếm → điều hướng sang trang product + query
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (search.trim()) navigate(`/search?q=${search}`);
+    if (query.trim()) {
+      navigate(`/product?query=${encodeURIComponent(query.trim())}`);
+      setQuery("");
+    }
   };
 
   return (
     <nav className="navbar">
-      {/* 1/3 trái: logo */}
       <div className="navbar-left">
         <Link to="/" className="navbar-logo">
           Mộc Gốm
         </Link>
       </div>
 
-      {/* 2/3 giữa: menu */}
       <div className="navbar-center">
         <Link to="/" className="navbar-link">
           Trang chủ
@@ -72,27 +73,28 @@ const Navbar: React.FC = () => {
         </Link>
       </div>
 
-      {/* Bên phải: search + cart + user */}
       <div className="navbar-right">
-        <form onSubmit={handleSearch} className="search-box">
+        <form className="search-box" onSubmit={handleSearch}>
           <input
             type="text"
             placeholder="Tìm kiếm..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
           />
           <button type="submit">
             <SearchIcon className="icon" />
           </button>
         </form>
 
-        <Link to="/cart" className="icon-btn">
-          <CartIcon className="icon" />
-        </Link>
+        <div className="cart-container">
+          <Link to="/cart" className="icon-btn">
+            <CartIcon className="icon" />
+            {totalItems > 0 && <span className="cart-badge">{totalItems}</span>}
+          </Link>
+        </div>
 
         {token ? (
           <div className="user-menu" ref={dropdownRef}>
-            {/* Hiển thị icon + lời chào */}
             <div className="user-info" onClick={toggleDropdown}>
               <UserIcon className="icon" />
               <span className="greeting">
@@ -109,17 +111,15 @@ const Navbar: React.FC = () => {
                 onMouseLeave={() => setShowDropdown(false)}
               >
                 {role === "ADMIN" && (
-                  <Link to="/admin/edit" className="dropdown-item">
-                    Chỉnh sửa sản phẩm
-                  </Link>
+                  <button className="dropdown-item">
+                    <Link to="/admin/edit">Chỉnh sửa sản phẩm</Link>
+                  </button>
                 )}
-
-                <button
-                  className="dropdown-item logout-btn"
-                  onClick={handleLogout}
-                >
-                  Đăng xuất
-                </button>
+                <div className="dropdown-item">
+                  <button className="dropdown-button" onClick={handleLogout}>
+                    Đăng xuất
+                  </button>
+                </div>
               </div>
             )}
           </div>

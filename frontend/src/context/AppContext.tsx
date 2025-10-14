@@ -10,6 +10,7 @@ export interface AppContextType {
   addToCart: (product: Product) => void;
   removeFromCart: (productId: number) => void;
   saveOrder: (items: CartItem[], total: number) => void;
+  clearCart: () => void; // ✅ thêm dòng này
 }
 
 const AppContext = createContext<AppContextType>({} as AppContextType);
@@ -51,6 +52,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setCart((prev) => prev.filter((item) => item.product.id !== productId));
   };
 
+  const clearCart = () => {
+    setCart([]);
+  };
+
   const saveOrder = (items: CartItem[], total: number) => {
     const newOrder: Order = {
       id: Date.now(),
@@ -73,6 +78,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         addToCart,
         removeFromCart,
         saveOrder,
+        clearCart, // ✅ bây giờ hợp lệ rồi
       }}
     >
       {children}

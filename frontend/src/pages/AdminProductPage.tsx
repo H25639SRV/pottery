@@ -1,11 +1,20 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { FaImage, FaEdit, FaTrash } from "react-icons/fa";
 import "../styles/AdminProduct.css";
 
+// ✅ Ép kiểu thủ công cho icon
+const IconImage = FaImage as unknown as React.FC;
+const IconEdit = FaEdit as unknown as React.FC;
+const IconTrash = FaTrash as unknown as React.FC;
+
+// ✅ Kiểu dữ liệu chuẩn Prisma
 interface Product {
-  _id?: string;
+  id: number;
   name: string;
   price: number;
+  stock: number;
   description: string;
   image: string;
 }
@@ -14,8 +23,10 @@ const AdminProductPage: React.FC = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [newProduct, setNewProduct] = useState<Product>({
+    id: 0,
     name: "",
     price: 0,
+    stock: 0,
     description: "",
     image: "",
   });
@@ -24,9 +35,9 @@ const AdminProductPage: React.FC = () => {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
-  // ✅ Chặn người không phải admin
+  // ✅ Kiểm tra quyền admin
   useEffect(() => {
-    if (role !== "admin") {
+    if (role?.toUpperCase() !== "ADMIN") {
       alert("Bạn không có quyền truy cập trang này!");
       navigate("/");
     } else {
@@ -34,62 +45,107 @@ const AdminProductPage: React.FC = () => {
     }
   }, []);
 
+  // ✅ Lấy danh sách sản phẩm
   const fetchProducts = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/products");
-      const data = await res.json();
-      setProducts(data);
+      const res = await axios.get<Product[]>(
+        "http://localhost:5000/api/products"
+      );
+      console.log("📦 Dữ liệu sản phẩm:", res.data);
+      setProducts(res.data);
     } catch (err) {
-      console.error("Lỗi khi tải sản phẩm:", err);
+      console.error("❌ Lỗi khi tải sản phẩm:", err);
     }
   };
 
+  // ✅ Thêm hoặc cập nhật sản phẩm
   const handleAddOrUpdate = async () => {
-    const url = editing
-      ? `http://localhost:5000/api/products/${editing._id}`
-      : "http://localhost:5000/api/products";
-    const method = editing ? "PUT" : "POST";
-
     try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(editing ? editing : newProduct),
-      });
+      if (editing) {
+        // 🛠️ Đang chỉnh sửa → PUT
+        const updatedProduct = {
+          name: editing.name,
+          price: editing.price,
+          stock: editing.stock,
+          description: editing.description,
+          image: editing.image,
+        };
 
-      if (!res.ok) throw new Error("Thao tác thất bại!");
-      alert(editing ? "Cập nhật thành công!" : "Thêm sản phẩm thành công!");
-      setNewProduct({ name: "", price: 0, description: "", image: "" });
+        await axios.put(
+          `http://localhost:5000/api/products/${editing.id}`,
+          updatedProduct,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        alert("✅ Cập nhật sản phẩm thành công!");
+      } else {
+        // 🆕 Thêm mới → POST
+        const newProductData = {
+          name: newProduct.name,
+          price: newProduct.price,
+          stock: newProduct.stock,
+          description: newProduct.description,
+          image: newProduct.image,
+        };
+
+        await axios.post("http://localhost:5000/api/products", newProductData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        alert("✅ Thêm sản phẩm thành công!");
+      }
+
+      // 🔁 Làm mới form và danh sách
       setEditing(null);
-      fetchProducts();
+      setNewProduct({
+        id: 0,
+        name: "",
+        price: 0,
+        stock: 0,
+        description: "",
+        image: "",
+      });
+      await fetchProducts();
     } catch (err) {
-      console.error(err);
+      console.error("❌ Lỗi khi thêm/cập nhật sản phẩm:", err);
     }
   };
 
-  const handleDelete = async (id: string) => {
+  // ✅ Xóa sản phẩm
+  const handleDelete = async (id?: number) => {
+    console.log("🆔 ID nhận được:", id);
+    if (!id) return alert("❌ ID sản phẩm không hợp lệ!");
     if (!window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) return;
+
     try {
-      const res = await fetch(`http://localhost:5000/api/products/${id}`, {
-        method: "DELETE",
+      await axios.delete(`http://localhost:5000/api/products/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error("Xóa thất bại!");
-      alert("Đã xóa sản phẩm!");
+      alert("🗑️ Đã xóa sản phẩm!");
       fetchProducts();
     } catch (err) {
-      console.error(err);
+      console.error("❌ Lỗi khi xóa sản phẩm:", err);
+    }
+  };
+
+  // ✅ Chọn ảnh từ máy tính
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      if (editing) {
+        setEditing({ ...editing, image: imageUrl });
+      } else {
+        setNewProduct({ ...newProduct, image: imageUrl });
+      }
     }
   };
 
   return (
-    <div className="admin-page" style={{ padding: "30px" }}>
-      <h2>Quản lý sản phẩm</h2>
+    <div className="admin-page">
+      <h2>🛒 Quản lý sản phẩm</h2>
 
-      <div className="product-form" style={{ marginBottom: "20px" }}>
+      <div className="product-form">
         <input
           type="text"
           placeholder="Tên sản phẩm"
@@ -100,9 +156,10 @@ const AdminProductPage: React.FC = () => {
               : setNewProduct({ ...newProduct, name: e.target.value })
           }
         />
+
         <input
           type="number"
-          placeholder="Giá"
+          placeholder="Giá sản phẩm (VNĐ)"
           value={editing ? editing.price : newProduct.price}
           onChange={(e) =>
             editing
@@ -110,18 +167,54 @@ const AdminProductPage: React.FC = () => {
               : setNewProduct({ ...newProduct, price: Number(e.target.value) })
           }
         />
+
         <input
-          type="text"
-          placeholder="Ảnh URL"
-          value={editing ? editing.image : newProduct.image}
+          type="number"
+          placeholder="Số lượng trong kho"
+          value={editing ? editing.stock : newProduct.stock}
           onChange={(e) =>
             editing
-              ? setEditing({ ...editing, image: e.target.value })
-              : setNewProduct({ ...newProduct, image: e.target.value })
+              ? setEditing({ ...editing, stock: Number(e.target.value) })
+              : setNewProduct({ ...newProduct, stock: Number(e.target.value) })
           }
         />
+
+        <div className="image-upload">
+          <label htmlFor="imageInput" className="image-btn">
+            <IconImage /> Chọn ảnh
+          </label>
+          <input
+            id="imageInput"
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={handleImageUpload}
+          />
+          <input
+            className="image-input"
+            type="text"
+            placeholder="URL ảnh hoặc chọn từ máy"
+            value={editing ? editing.image : newProduct.image}
+            onChange={(e) =>
+              editing
+                ? setEditing({ ...editing, image: e.target.value })
+                : setNewProduct({ ...newProduct, image: e.target.value })
+            }
+          />
+        </div>
+
+        {(editing?.image || newProduct.image) && (
+          <div className="image-preview">
+            <img
+              src={editing ? editing.image : newProduct.image}
+              alt="Preview"
+              className="preview-img"
+            />
+          </div>
+        )}
+
         <textarea
-          placeholder="Mô tả"
+          placeholder="Mô tả chi tiết sản phẩm..."
           value={editing ? editing.description : newProduct.description}
           onChange={(e) =>
             editing
@@ -129,17 +222,25 @@ const AdminProductPage: React.FC = () => {
               : setNewProduct({ ...newProduct, description: e.target.value })
           }
         />
-        <button onClick={handleAddOrUpdate}>
-          {editing ? "Cập nhật" : "Thêm sản phẩm"}
-        </button>
-        {editing && <button onClick={() => setEditing(null)}>Hủy</button>}
+
+        <div className="form-buttons">
+          <button className="add-btn" onClick={handleAddOrUpdate}>
+            {editing ? "💾 Cập nhật" : "➕ Thêm sản phẩm"}
+          </button>
+          {editing && (
+            <button className="cancel-btn" onClick={() => setEditing(null)}>
+              ❌ Hủy
+            </button>
+          )}
+        </div>
       </div>
 
-      <table border={1} cellPadding={8} style={{ width: "100%" }}>
+      <table className="product-table">
         <thead>
           <tr>
             <th>Tên</th>
             <th>Giá</th>
+            <th>Số lượng</th>
             <th>Mô tả</th>
             <th>Ảnh</th>
             <th>Hành động</th>
@@ -147,16 +248,24 @@ const AdminProductPage: React.FC = () => {
         </thead>
         <tbody>
           {products.map((p) => (
-            <tr key={p._id}>
+            <tr key={p.id}>
               <td>{p.name}</td>
               <td>{p.price}</td>
+              <td>{p.stock}</td>
               <td>{p.description}</td>
               <td>
                 <img src={p.image} alt={p.name} width="80" />
               </td>
-              <td>
-                <button onClick={() => setEditing(p)}>Sửa</button>
-                <button onClick={() => handleDelete(p._id!)}>Xóa</button>
+              <td className="action-buttons">
+                <button className="edit-btn" onClick={() => setEditing(p)}>
+                  <IconEdit />
+                </button>
+                <button
+                  className="delete-btn"
+                  onClick={() => handleDelete(p.id)}
+                >
+                  <IconTrash />
+                </button>
               </td>
             </tr>
           ))}

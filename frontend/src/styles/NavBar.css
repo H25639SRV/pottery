@@ -28,7 +28,7 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 18px;
+  gap: 20px;
 }
 
 /* --- logo --- */
@@ -70,33 +70,70 @@
 }
 
 /* --- search --- */
+/* 🔍 Ô tìm kiếm */
 .search-box {
   display: flex;
   align-items: center;
-  background-color: #7b573d;
+  background-color: #7b573d; /* màu nâu Mộc Gốm */
   border-radius: 20px;
-  padding: 4px 10px;
-  overflow: hidden;
+  padding: 3px 8px;
+  transition: all 0.25s ease;
+}
+
+.search-box:hover {
+  background-color: #8b5e3c;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
 }
 
 .search-box input {
-  background: transparent;
   border: none;
   outline: none;
+  background: transparent;
   color: white;
+  font-size: 0.95rem;
   padding: 6px 8px;
-  width: 130px;
+  width: 150px;
 }
 
 .search-box input::placeholder {
   color: #e2d1c3;
 }
 
+.search-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 5px;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.search-btn:hover {
+  transform: scale(1.1);
+  color: #ffd5aa;
+}
+
+.search-box input::placeholder {
+  color: #e2d1c3;
+}
+
+/* --- icon tìm kiếm --- */
 .search-box button {
   background: none;
   border: none;
   cursor: pointer;
   color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 6px; /* dịch sang trái nhẹ */
+}
+
+.search-box button .icon {
+  font-size: 1.2rem;
 }
 
 /* --- icon --- */
@@ -117,6 +154,25 @@
   font-size: 1.4rem;
 }
 
+/* --- user section --- */
+.user-info {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 10px;
+}
+
+.greeting {
+  font-size: 15px;
+  color: #fff;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.greeting strong {
+  color: #ffebcd;
+}
+
 /* --- dropdown --- */
 .user-menu {
   position: relative;
@@ -128,24 +184,12 @@
   margin-top: 10px;
   background-color: #5b3a29; /* nâu đậm */
   color: white;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 10px;
-  min-width: 180px;
+  min-width: 190px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   z-index: 100;
-  transition: opacity 0.3s ease;
-}
-
-.dropdown-item {
-  display: block;
-  color: white;
-  padding: 8px 12px;
-  text-decoration: none;
-  border-radius: 6px;
-}
-
-.dropdown-item:hover {
-  background-color: #7a523a;
+  animation: fadeIn 0.2s ease;
 }
 
 .dropdown-email {
@@ -155,21 +199,97 @@
   font-size: 14px;
 }
 
-.logout-btn {
-  color: #ffdddd;
+/* Nút “Chỉnh sửa sản phẩm” & “Đăng xuất” */
+/* --- dropdown items --- */
+.dropdown-item {
+  display: flex;
+  width: 100%;
+  background-color: #5b3a29;
+  color: #fff;
+  padding: 10px 0px 10px 0px;
+  text-decoration: none;
+  border: none;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.25s ease, transform 0.1s ease;
+  margin-bottom: 6px;
+  box-sizing: border-box;
+}
+.dropdown-button {
+  display: block;
+  width: 100%;
+  background-color: #5b3a29;
+  color: #fff;
+  padding: 10px 10px 10px 10px;
+  text-decoration: none;
+  border: none;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.25s ease, transform 0.1s ease;
+  box-sizing: border-box;
+}
+.dropdown-item:hover {
+  background-color: #5b3a29;
+  transform: scale(1.02);
 }
 
-.user-info {
+/* 🛒 Badge hiển thị số lượng sản phẩm */
+.cart-container {
+  position: relative;
+}
+
+/* --- Badge giỏ hàng --- */
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background-color: #d93025;
+  color: white;
+  border-radius: 50%; /* ✅ hình tròn hoàn toàn */
+  width: 22px; /* ✅ tăng kích thước */
+  height: 22px;
   display: flex;
   align-items: center;
-  cursor: pointer;
-  gap: 6px;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: bold;
+  border: 2px solid white; /* giúp badge nổi bật hơn */
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
 }
 
-.greeting {
-  font-size: 14px;
-  color: #333;
-  font-weight: 500;
+.search-wrapper {
+  position: relative;
+}
+
+.search-suggestions {
+  position: absolute;
+  top: 105%;
+  left: 0;
+  width: 100%;
+  background: #fffaf6;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 5px 0;
+  z-index: 999;
+}
+
+.search-suggestions li {
+  padding: 8px 12px;
+  cursor: pointer;
+  color: #5a3e2b;
+  transition: background 0.2s;
+}
+
+.search-suggestions li:hover {
+  background: #f1e1d1;
 }
 
 @keyframes fadeIn {

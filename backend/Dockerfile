@@ -4,24 +4,23 @@ FROM node:18
 # Tạo thư mục làm việc trong container
 WORKDIR /app
 
-# Copy package.json và package-lock.json trước để cache npm install
+# Copy file package
 COPY package*.json ./
 
-# Cài đặt dependency
-RUN npm config set registry https://registry.npmjs.org/
+# Cài đặt dependencies
 RUN npm install
 
-# Copy toàn bộ mã nguồn (bao gồm prisma/)
+# Copy toàn bộ mã nguồn
 COPY . .
 
 # Sinh Prisma Client
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
-# Build TypeScript
+# Build TypeScript ra dist/
 RUN npm run build
 
-# Mở cổng 5000
+# Expose cổng
 EXPOSE 5000
 
-# Lệnh chạy khi container khởi động
-CMD ["node", "dist/src/index.js"]
+# Chạy server
+CMD ["node", "dist/server.js"]

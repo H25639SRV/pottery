@@ -9,8 +9,8 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -33,18 +33,11 @@ const LoginPage: React.FC = () => {
         return;
       }
 
-      // ✅ Lưu thông tin vào context
-      login({
-        token: data.token,
-        role: data.role,
-        email: data.email,
-        username: data.username,
-      });
-
-      alert(`Xin chào ${data.username}!`);
-      navigate("/"); // chuyển về trang chủ
+      login({ token: data.token, user: data.user });
+      alert(`Xin chào ${data.user.username}!`);
+      navigate("/");
     } catch (err) {
-      console.error("Lỗi đăng nhập:", err);
+      console.error("❌ Lỗi đăng nhập:", err);
       alert("Đã xảy ra lỗi, vui lòng thử lại!");
     } finally {
       setLoading(false);
@@ -70,7 +63,6 @@ const LoginPage: React.FC = () => {
         }}
       >
         <div className="overlay"></div>
-
         <div className="auth-container">
           <h2 className="auth-title">Đăng nhập</h2>
 

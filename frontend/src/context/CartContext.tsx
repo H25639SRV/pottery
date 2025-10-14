@@ -1,57 +1,61 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-
-export interface CartItem {
-  productId: number;
-  name: string;
-  price: number;
-  quantity: number;
-}
-
-interface CartContextType {
-  cart: CartItem[];
-  addToCart: (item: CartItem) => void;
-  removeFromCart: (productId: number) => void;
-  clearCart: () => void;
-}
+import React, { createContext, useContext, useState } from "react";
+import axios from "axios";
+import { CartContextType, CartItem } from "../types";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    // load từ localStorage khi mở lại trang
-    const saved = localStorage.getItem("cart");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [cart, setCart] = useState<CartItem[]>([]);
 
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
-
-  const addToCart = (item: CartItem) => {
-    setCart((prev) => {
-      const existing = prev.find((i) => i.productId === item.productId);
-      if (existing) {
-        return prev.map((i) =>
-          i.productId === item.productId
-            ? { ...i, quantity: i.quantity + item.quantity }
-            : i
-        );
-      }
-      return [...prev, item];
-    });
+  const fetchCart = async (userId: number) => {
+    try {
+      const res = await axios.get<{ items: CartItem[] }>(
+        `http://localhost:5000/api/cart/${userId}`
+      );
+      setCart(res.data.items || []);
+    } catch (err) {
+      console.error("❌ Lỗi khi tải giỏ hàng:", err);
+      setCart([]);
+    }
   };
 
-  const removeFromCart = (productId: number) => {
-    setCart((prev) => prev.filter((i) => i.productId !== productId));
+  const addToCart = async (
+    userId: number,
+    productId: number,
+    quantity: number = 1
+  ) => {
+    try {
+      await axios.post("http://localhost:5000/api/cart/add", {
+        userId,
+        productId,
+        quantity,
+      });
+      await fetchCart(userId);
+    } catch (err) {
+      console.error("❌ Lỗi thêm vào giỏ hàng:", err);
+    }
+  };
+
+  // 🆕 Xóa sản phẩm khỏi giỏ hàng
+  const removeFromCart = async (userId: number, productId: number) => {
+    try {
+      await axios.post("http://localhost:5000/api/cart/remove", {
+        userId,
+        productId,
+      });
+      await fetchCart(userId);
+    } catch (err) {
+      console.error("❌ Lỗi khi xóa sản phẩm khỏi giỏ:", err);
+    }
   };
 
   const clearCart = () => setCart([]);
 
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, removeFromCart, clearCart }}
+      value={{ cart, fetchCart, addToCart, removeFromCart, clearCart }}
     >
       {children}
     </CartContext.Provider>

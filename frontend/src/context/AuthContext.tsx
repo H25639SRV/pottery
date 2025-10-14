@@ -1,79 +1,108 @@
+// src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-interface AuthContextType {
-  token: string | null;
-  role: string | null;
-  email: string | null;
-  username: string | null;
-  login: (data: any) => void;
-  logout: () => void;
-  loading: boolean; // ✅ thêm vào để biết khi nào context load xong
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  role?: string;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  token: null,
-  role: null,
-  email: null,
-  username: null,
-  login: () => {},
-  logout: () => {},
-  loading: true, // ✅ mặc định đang tải
-});
+interface AuthState {
+  token: string;
+  userId: number;
+  username?: string;
+  email?: string;
+  role?: string;
+  user?: User;
+}
+
+interface AuthContextType extends AuthState {
+  login: (data: { token: string; user: User }) => void;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [token, setToken] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
-  const [username, setUsername] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true); // ✅ thêm trạng thái loading
+  const [auth, setAuth] = useState<AuthState>({
+    token: "",
+    userId: 0,
+    username: "",
+    email: "",
+    role: "",
+    user: undefined,
+  });
 
-  const login = (data: any) => {
-    setToken(data.token);
-    setRole(data.role);
-    setEmail(data.email);
-    setUsername(data.username);
+  // ✅ Load dữ liệu từ localStorage khi mở lại trang
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+    const storedRole = localStorage.getItem("role");
 
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("role", data.role);
-    localStorage.setItem("email", data.email);
-    localStorage.setItem("username", data.username);
+    if (storedToken && storedUser) {
+      try {
+        const user: User = JSON.parse(storedUser);
+        setAuth({
+          token: storedToken,
+          userId: user.id,
+          username: user.username,
+          email: user.email,
+          role: storedRole || user.role,
+          user,
+        });
+      } catch (err) {
+        console.error("❌ Lỗi parse user từ localStorage:", err);
+      }
+    }
+  }, []);
+
+  // ✅ Khi đăng nhập
+  const login = (data: { token: string; user: User }) => {
+    const { token, user } = data;
+
+    setAuth({
+      token,
+      userId: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      user,
+    });
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+    if (user.role) localStorage.setItem("role", user.role);
+    localStorage.setItem("username", user.username);
   };
 
+  // ✅ Khi đăng xuất
   const logout = () => {
-    setToken(null);
-    setRole(null);
-    setEmail(null);
-    setUsername(null);
-
+    setAuth({
+      token: "",
+      userId: 0,
+      username: "",
+      email: "",
+      role: "",
+      user: undefined,
+    });
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     localStorage.removeItem("role");
-    localStorage.removeItem("email");
     localStorage.removeItem("username");
   };
 
-  useEffect(() => {
-    // đảm bảo đồng bộ khi reload
-    const storedToken = localStorage.getItem("token");
-    const storedRole = localStorage.getItem("role");
-    const storedEmail = localStorage.getItem("email");
-    const storedUsername = localStorage.getItem("username");
-
-    setToken(storedToken);
-    setRole(storedRole);
-    setEmail(storedEmail);
-    setUsername(storedUsername);
-    setLoading(false); // ✅ đánh dấu đã load xong
-  }, []);
-
   return (
-    <AuthContext.Provider
-      value={{ token, role, email, username, login, logout, loading }}
-    >
+    <AuthContext.Provider value={{ ...auth, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
+  return context;
+};

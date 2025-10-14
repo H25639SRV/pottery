@@ -55,6 +55,7 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, description, price, image, stock } = req.body;
+  console.log("đang cập nhật sản phẩm ID:", id);
 
   try {
     const updatedProduct = await prisma.product.update({
@@ -70,6 +71,7 @@ export const updateProduct = async (req: Request, res: Response) => {
 
     res.json(updatedProduct);
   } catch (error) {
+    console.log("lỗi khi cập nhật:", error);
     res.status(500).json({ message: "Lỗi khi cập nhật sản phẩm", error });
   }
 };
@@ -77,11 +79,13 @@ export const updateProduct = async (req: Request, res: Response) => {
 // ✅ Xóa sản phẩm
 export const deleteProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
+  console.log("đang xóa sản phẩm ID:", id);
 
   try {
     await prisma.product.delete({ where: { id: Number(id) } });
     res.json({ message: "Đã xóa sản phẩm" });
   } catch (error) {
+    console.log("lỗi khi xóa:", error);
     res.status(500).json({ message: "Lỗi khi xóa sản phẩm", error });
   }
 };
