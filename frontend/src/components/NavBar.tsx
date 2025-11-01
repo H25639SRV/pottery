@@ -54,7 +54,12 @@ const Navbar: React.FC = () => {
     <nav className="navbar">
       <div className="navbar-left">
         <Link to="/" className="navbar-logo">
-          Mộc Gốm
+          {/* Thay thế chữ "Mộc Gốm" bằng thẻ <img> */}
+          <img
+            src="/image/mocgom.png"
+            alt="Mộc Gốm Logo"
+            className="logo-image"
+          />
         </Link>
       </div>
 
@@ -70,6 +75,9 @@ const Navbar: React.FC = () => {
         </Link>
         <Link to="/privacy" className="navbar-link">
           Liên hệ
+        </Link>
+        <Link to="/render" className="navbar-link">
+          Thử hoa văn
         </Link>
       </div>
 

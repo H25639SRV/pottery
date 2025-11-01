@@ -48,9 +48,7 @@ const AdminProductPage: React.FC = () => {
   // ✅ Lấy danh sách sản phẩm
   const fetchProducts = async () => {
     try {
-      const res = await axios.get<Product[]>(
-        "http://localhost:5000/api/products"
-      );
+      const res = await axios.get<Product[]>("/api/products");
       console.log("📦 Dữ liệu sản phẩm:", res.data);
       setProducts(res.data);
     } catch (err) {
@@ -71,11 +69,9 @@ const AdminProductPage: React.FC = () => {
           image: editing.image,
         };
 
-        await axios.put(
-          `http://localhost:5000/api/products/${editing.id}`,
-          updatedProduct,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await axios.put(`/api/products/${editing.id}`, updatedProduct, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         alert("✅ Cập nhật sản phẩm thành công!");
       } else {
@@ -88,7 +84,7 @@ const AdminProductPage: React.FC = () => {
           image: newProduct.image,
         };
 
-        await axios.post("http://localhost:5000/api/products", newProductData, {
+        await axios.post("/api/products", newProductData, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -118,7 +114,7 @@ const AdminProductPage: React.FC = () => {
     if (!window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/products/${id}`, {
+      await axios.delete(`/api/products/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("🗑️ Đã xóa sản phẩm!");

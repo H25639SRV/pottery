@@ -104,29 +104,35 @@
   right: 25px;
 }
 
-/* --- Thanh gạch chuyển trang --- */
-.progress-bar {
+/* --- Progress bar dots for slideshow --- */
+.home-progress-bar {
   position: absolute;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  display: flex;
+  display: none;
   gap: 10px;
+  justify-content: center;
+  align-items: center;
   z-index: 10;
 }
 
 .dot {
-  display: inline-block;
-  width: 25px;
-  height: 3px;
-  background-color: rgba(255, 255, 255, 0.4);
-  border-radius: 2px;
-  transition: background-color 0.4s, width 0.4s;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
 }
 
 .dot.active {
   background-color: #fff;
-  width: 40px;
+  transform: scale(1.2);
+}
+
+.dot:hover {
+  background-color: rgba(255, 255, 255, 0.9);
 }
 
 /* --- Feature section --- */

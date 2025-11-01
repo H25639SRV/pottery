@@ -37,9 +37,7 @@ const Home: React.FC = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get<Product[]>(
-        "http://localhost:5000/api/products"
-      );
+      const res = await axios.get<Product[]>("/api/products");
 
       // 🔧 ép kiểu id nếu backend trả về _id dạng string
       const formatted = res.data.map((p: any) => ({
@@ -114,7 +112,7 @@ const Home: React.FC = () => {
           ❯
         </button>
 
-        <div className="progress-bar">
+        <div className="home-progress-bar">
           {backgroundImages.map((_, index) => (
             <span
               key={index}

@@ -19,7 +19,7 @@ const Cart: React.FC = () => {
   const handleCheckout = async () => {
     if (!user?.id) return alert("Bạn chưa đăng nhập!");
     try {
-      await axios.post("http://localhost:5000/api/cart/checkout", {
+      await axios.post("/api/cart/checkout", {
         userId: user.id,
       });
       navigate("/checkout");

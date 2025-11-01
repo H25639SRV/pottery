@@ -1,4 +1,9 @@
+version: "3.9"
+
 services:
+  # ========================
+  # 🗄️ PostgreSQL Database
+  # ========================
   db:
     image: postgres:14
     restart: always
@@ -10,17 +15,78 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  # ========================
+  # ⚙️ Backend (Node + Express)
+  # ========================
   backend:
-    build: ./backend
-    container_name: pottery-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     restart: always
     env_file:
       - ./backend/.env
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "5000:5000"
-    depends_on:
-      - db
+    volumes:
+      # Code backend đồng bộ với container
+      - ./backend:/app
+      - /app/node_modules
 
+      # Lưu ảnh render, upload, assets ra ngoài host để dễ xem
+      - ./backend/public:/app/public
+      - ./backend/src/assets:/app/src/assets
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        npm run build &&
+        node dist/server.js
+      "
+
+  # ========================
+  # 🌐 Frontend (React / Vite / Next)
+  # ========================
+  frontend:
+    image: node:18
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: sh -c "npm install && npm run build"
+    depends_on:
+      - backend
+
+  # ========================
+  # 🚀 Nginx (Reverse Proxy)
+  # ========================
+  nginx:
+    image: nginx:latest
+    container_name: pottery-nginx
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      # Build frontend để phục vụ
+      - ./frontend/build:/usr/share/nginx/html
+
+      # Render ảnh hiển thị từ backend
+      - ./backend/public/render_output:/usr/share/nginx/html/render_output
+
+      # File cấu hình Nginx custom
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - backend
+
+# ========================
+# 💾 Volumes
+# ========================
 volumes:
   pgdata:

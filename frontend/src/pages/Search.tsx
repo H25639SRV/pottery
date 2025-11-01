@@ -25,9 +25,7 @@ const Search: React.FC = () => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const res = await axios.get<Product[]>(
-          "http://localhost:5000/api/product"
-        );
+        const res = await axios.get<Product[]>("/api/product");
         const allProducts = res.data;
 
         const filtered = allProducts.filter((p) =>

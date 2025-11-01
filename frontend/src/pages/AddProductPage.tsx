@@ -10,7 +10,7 @@ const AddProductPage: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return alert("Vui lòng đăng nhập lại!");
 
-    const res = await fetch("http://localhost:5000/api/products", {
+    const res = await fetch("/api/products", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

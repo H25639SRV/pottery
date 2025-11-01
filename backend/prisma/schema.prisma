@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x"]
 }
 
 datasource db {
@@ -8,9 +9,7 @@ datasource db {
 }
 
 /*
-  User: có username (tuỳ chọn), email (unique), password, role
-  Product: có stock field
-  Cart & CartItem: để lưu giỏ hàng
+  User, Product, Cart, Message
 */
 
 model User {
@@ -22,9 +21,8 @@ model User {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt @default(now())
 
-  // Quan hệ
   carts     Cart[]
-  products  Product[] // nếu bạn muốn liên kết sản phẩm với user (nếu không dùng, có thể bỏ)
+  products  Product[]
 }
 
 model Product {
@@ -37,11 +35,9 @@ model Product {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  // Nếu bạn muốn product gắn với user (người tạo) — để dùng thì bật userId/user
   userId      Int? 
   user        User?      @relation(fields: [userId], references: [id])
 
-  // Cart items relation
   cartItems   CartItem[]
 }
 
@@ -64,3 +60,24 @@ model CartItem {
   cart       Cart       @relation(fields: [cartId], references: [id])
   product    Product    @relation(fields: [productId], references: [id])
 }
+
+/*
+  Chat hệ thống: guest <-> admin <-> chatbot
+*/
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  sender    String
+  text      String
+  role      String   @default("guest") // guest | admin | bot
+  createdAt DateTime @default(now())
+}
+
+model RenderResult {
+  id           Int      @id @default(autoincrement())
+  vaseName     String
+  patternFile  String
+  resultImage  String
+  createdAt    DateTime @default(now())
+} 
+

@@ -291,7 +291,21 @@
 .search-suggestions li:hover {
   background: #f1e1d1;
 }
+.navbar-logo {
+  /* Loại bỏ các thuộc tính text cũ và thay bằng flex để chứa ảnh */
+  display: flex;
+  align-items: center;
+  /* Giữ các thuộc tính chung nếu muốn Link có hiệu ứng hover hoặc padding */
+  text-decoration: none;
+}
 
+/* 🖼️ CSS DÀNH CHO ẢNH LOGO ĐƯỢC THÊM VÀO ĐÂY */
+.logo-image {
+  height: 48px; /* Điều chỉnh chiều cao của logo */
+  width: auto; /* Giữ tỷ lệ khung hình */
+  /* margin-right: 10px; Tùy chọn, nếu bạn muốn có khoảng trống giữa logo và nội dung khác */
+}
+/* 🖼️ KẾT THÚC PHẦN CSS CHO ẢNH LOGO */
 @keyframes fadeIn {
   from {
     opacity: 0;

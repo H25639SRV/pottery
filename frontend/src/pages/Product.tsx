@@ -38,9 +38,7 @@ const Product: React.FC = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get<Product[]>(
-        "http://localhost:5000/api/products"
-      );
+      const res = await axios.get<Product[]>("/api/products");
       setProducts(res.data);
     } catch (err) {
       console.error("❌ Lỗi tải sản phẩm:", err);
@@ -60,7 +58,7 @@ const Product: React.FC = () => {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/cart/add", {
+      await axios.post("/api/cart/add", {
         userId,
         productId,
         quantity: 1,

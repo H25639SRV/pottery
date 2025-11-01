@@ -1,0 +1,8 @@
+# .dockerignore
+node_modules
+dist
+.git
+.env
+public/render_output
+public/uploads
+*.log
