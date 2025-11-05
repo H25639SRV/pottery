@@ -1,10 +1,9 @@
 # -------------------------
-# Stage 1: Build
+# Stage 1: Build React app
 # -------------------------
-FROM node:18 AS build
+FROM node:20 AS build
 
 WORKDIR /app
-
 COPY package*.json ./
 RUN npm install
 
@@ -12,19 +11,15 @@ COPY . .
 RUN npm run build
 
 # -------------------------
-# Stage 2: Production
+# Stage 2: Serve bằng NGINX
 # -------------------------
-FROM node:18
+FROM nginx:1.27-alpine
 
-WORKDIR /app
+# Copy file build đúng thư mục (React -> build, không phải dist)
+COPY --from=build /app/build /usr/share/nginx/html
 
-COPY package*.json ./
-RUN npm install --omit=dev
+# Copy file cấu hình nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-COPY --from=build /app/dist ./dist
-
-# Expose port
-EXPOSE 5000
-
-# Start the backend server
-CMD ["node", "dist/server.js"]
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

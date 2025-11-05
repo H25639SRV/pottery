@@ -1,0 +1,147 @@
+/* frontend/src/styles/ChatWidget.css */
+
+/* Floating circular button */
+.chat-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #16a34a, #10b981);
+  color: white;
+  border: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Chat window (resizable) */
+.chat-window {
+  position: fixed;
+  right: 20px;
+  bottom: 100px;
+  width: 360px;
+  max-width: calc(100vw - 40px);
+  height: 480px;
+  min-height: 220px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  resize: both; /* cho phép thay đổi kích thước bằng kéo mép */
+  z-index: 1200;
+}
+
+/* Header */
+.chat-header {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  background: linear-gradient(90deg, #065f46, #10b981);
+  color: white;
+  gap: 4px;
+}
+.chat-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+.chat-subtitle {
+  font-size: 12px;
+  opacity: 0.9;
+}
+.chat-actions {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+}
+
+/* Body */
+.chat-body {
+  flex: 1;
+  padding: 12px;
+  overflow: auto;
+  background: #f8fafc;
+}
+
+/* Message items */
+.chat-message-item {
+  margin-bottom: 10px;
+  max-width: 80%;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #e6eef3;
+  font-size: 14px;
+}
+.chat-message-item.own {
+  margin-left: auto;
+  background: #dcfce7;
+}
+.chat-message-item.bot {
+  background: #fff7ed;
+}
+.chat-message-text {
+  white-space: pre-wrap;
+}
+.chat-message-meta {
+  font-size: 11px;
+  color: #666;
+  margin-top: 6px;
+}
+
+/* Footer */
+.chat-footer {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid #eee;
+}
+.chat-footer input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+.chat-footer button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #10b981;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+/* Admin rooms panel */
+.admin-rooms {
+  border-top: 1px solid #eee;
+  padding: 8px;
+  background: #fafafa;
+  font-size: 13px;
+}
+.admin-rooms-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.admin-room-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  align-items: center;
+}
+.admin-room-row .room-name {
+  flex: 1;
+}
+.admin-room-row button {
+  padding: 6px 10px;
+  background: #0ea5a4;
+  color: white;
+  border: none;
+  border-radius: 6px;
+}

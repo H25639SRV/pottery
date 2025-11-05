@@ -10,9 +10,8 @@ import AdminProductPage from "./pages/AdminProductPage";
 import AdminRoute from "./components/AdminRoute";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
-import TryPatternPage from "./pages/TryPatternPage"; // ✅ đổi import
+import TryPatternPage from "./pages/TryPatternPage";
 import ChatWidget from "./components/Chat/ChatWidget";
-
 const App: React.FC = () => {
   return (
     <>
@@ -36,8 +35,7 @@ const App: React.FC = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Routes>
-
-      <ChatWidget userRole="guest" />
+      <ChatWidget />
     </>
   );
 };

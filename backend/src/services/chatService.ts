@@ -1,8 +1,9 @@
 import { PrismaClient } from "@prisma/client";
+import { getGeminiReply } from "../services/chatbotService"; // nếu có file geminiBot.ts
 const prisma = new PrismaClient();
 
 /**
- * Lưu tin nhắn mới vào database
+ * Lưu tin nhắn mới vào DB
  */
 export const saveMessage = async (data: {
   sender: string;
@@ -24,7 +25,7 @@ export const saveMessage = async (data: {
 };
 
 /**
- * Lấy toàn bộ tin nhắn (theo thứ tự thời gian)
+ * Lấy toàn bộ tin nhắn (theo thời gian)
  */
 export const getMessages = async () => {
   return prisma.message.findMany({
@@ -33,53 +34,58 @@ export const getMessages = async () => {
 };
 
 /**
- * Xử lý chat: lưu tin nhắn người dùng và sinh phản hồi bot
+ * Xử lý tin nhắn: lưu + sinh phản hồi tự động
  */
 export const handleChatMessage = async (sender: string, text: string) => {
   try {
     // 1️⃣ Lưu tin nhắn người gửi
-    await prisma.message.create({
-      data: {
-        sender,
-        text,
-        role: "guest",
-      },
+    await saveMessage({ sender, text, role: "guest" });
+
+    // 2️⃣ Sinh phản hồi của bot
+    const botText = await generateBotReply(text);
+
+    // 3️⃣ Lưu phản hồi của bot vào DB
+    const botMessage = await saveMessage({
+      sender: "AI",
+      text: botText,
+      role: "bot",
     });
 
-    // 2️⃣ Tạo phản hồi của bot
-    const botText = generateBotReply(text);
-
-    const botMessage = await prisma.message.create({
-      data: {
-        sender: "bot",
-        text: botText,
-        role: "bot",
-      },
-    });
-
-    // 3️⃣ Trả về phản hồi để frontend hiển thị
     return botMessage;
   } catch (error) {
-    console.error("❌ Lỗi trong handleChatMessage:", error);
+    console.error("❌ Lỗi handleChatMessage:", error);
     throw error;
   }
 };
 
 /**
- * Tạo phản hồi bot cơ bản
+ * Sinh phản hồi từ AI (ưu tiên Gemini nếu có key)
  */
-function generateBotReply(input: string): string {
-  const msg = input.toLowerCase();
-
-  if (msg.includes("chào") || msg.includes("xin chào")) {
-    return "Xin chào! Tôi là bot của Mộc Gốm 🌿. Bạn cần hỗ trợ gì hôm nay?";
+async function generateBotReply(input: string): Promise<string> {
+  try {
+    if (process.env.GEMINI_API_KEY) {
+      // Dùng Gemini nếu có API key
+      const geminiReply = await getGeminiReply(input);
+      if (geminiReply) return geminiReply;
+    }
+  } catch (e) {
+    console.warn("⚠️ Gemini lỗi hoặc hết quota, fallback sang rule-based.");
   }
-  if (msg.includes("giá") || msg.includes("bao nhiêu")) {
-    return "Các sản phẩm gốm của Mộc Gốm có giá từ 150k đến 500k tuỳ loại.";
+
+  // Fallback: Rule-based miễn phí
+  const msg = input.toLowerCase();
+  if (msg.includes("chào")) {
+    return "Xin chào! Tôi là trợ lý của Mộc Gốm 🏺. Bạn cần hỗ trợ gì hôm nay?";
+  }
+  if (msg.includes("giá")) {
+    return "Các sản phẩm gốm có giá từ 150k đến 500k, tuỳ loại và kích thước nha.";
+  }
+  if (msg.includes("vận chuyển") || msg.includes("ship")) {
+    return "Mộc Gốm có hỗ trợ giao hàng toàn quốc 📦.";
   }
   if (msg.includes("địa chỉ") || msg.includes("ở đâu")) {
-    return "Cửa hàng Mộc Gốm hiện tại ở Hà Nội — bạn có thể ghé thăm bất kỳ lúc nào nhé! 🏺";
+    return "Cửa hàng Mộc Gốm hiện ở Hà Nội — bạn có thể ghé bất cứ lúc nào!";
   }
 
-  return "Cảm ơn bạn đã nhắn tin 💬. Bộ phận hỗ trợ sẽ phản hồi sớm nhất!";
+  return "Cảm ơn bạn đã liên hệ 💬. Bộ phận hỗ trợ sẽ phản hồi sớm nhất!";
 }

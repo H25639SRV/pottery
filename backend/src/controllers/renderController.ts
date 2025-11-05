@@ -314,8 +314,8 @@ export const renderPattern = async (req: Request, res: Response) => {
     const filePath = path.join(OUTPUT_DIR, filename);
     await fs.promises.writeFile(filePath, finalResult);
     console.log(`✅ Render hoàn tất: ${filename}`);
-    console.log(`     Pattern type: ${isDarkPattern ? "Dark" : "Light"}`);
-    console.log(`     Blend mode: ${blendMode}`);
+    console.log(`  Pattern type: ${isDarkPattern ? "Dark" : "Light"}`);
+    console.log(`  Blend mode: ${blendMode}`);
     return res.status(200).json({
       message: "Render completed",
       resultUrl: `/render_output/${filename}`,
