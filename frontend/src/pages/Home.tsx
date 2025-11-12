@@ -23,7 +23,6 @@ const Home: React.FC = () => {
     "/image/potterybackground.png",
     "/image/potterybackground2.png",
     "/image/potterybackground3.png",
-    "/image/potterybackground4.png",
   ];
 
   useEffect(() => {
