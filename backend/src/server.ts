@@ -22,12 +22,20 @@ dotenv.config();
 const app = express();
 console.log("✅ Khởi tạo server Mộc Gốm...");
 
+// Lấy danh sách các URL được phép từ biến môi trường
+// Ví dụ: CLIENT_URL=https://netlify-domain.app,https://abcd1234.ngrok.io,http://localhost:3000
+const allowedOrigins = (
+  process.env.CLIENT_URL || "http://localhost:3000"
+).split(",");
+
+// --- CẤU HÌNH CORS CHO HTTP ---
 app.use(
   cors({
-    origin: ["http://localhost:3000", process.env.CLIENT_URL || "*"],
+    origin: allowedOrigins,
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -57,10 +65,12 @@ app.get("/", (req: Request, res: Response) => {
 // HTTP + Socket
 const server = http.createServer(app);
 
+// --- CẤU HÌNH CORS CHO SOCKET.IO ---
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000", process.env.CLIENT_URL || "*"],
+    origin: allowedOrigins, // Sử dụng cùng danh sách origin cho Socket.io
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
