@@ -1,55 +1,96 @@
 import React, { useEffect, useState } from "react";
+
 import axios from "axios";
+
 import { useNavigate } from "react-router-dom";
+
 import { FaImage, FaEdit, FaTrash } from "react-icons/fa";
+
 import "../styles/AdminProduct.css";
 
+// 🔑 KHAI BÁO BIẾN MÔI TRƯỜNG API URL
+
+const API_URL = process.env.REACT_APP_API_URL;
+
 // ✅ Ép kiểu thủ công cho icon
+
 const IconImage = FaImage as unknown as React.FC;
+
 const IconEdit = FaEdit as unknown as React.FC;
+
 const IconTrash = FaTrash as unknown as React.FC;
 
 // ✅ Kiểu dữ liệu chuẩn Prisma
+
 interface Product {
   id: number;
+
   name: string;
+
   price: number;
+
   stock: number;
+
   description: string;
+
   image: string;
 }
 
 const AdminProductPage: React.FC = () => {
   const navigate = useNavigate();
+
   const [products, setProducts] = useState<Product[]>([]);
+
   const [newProduct, setNewProduct] = useState<Product>({
     id: 0,
+
     name: "",
+
     price: 0,
+
     stock: 0,
+
     description: "",
+
     image: "",
   });
+
   const [editing, setEditing] = useState<Product | null>(null);
 
   const token = localStorage.getItem("token");
+
   const role = localStorage.getItem("role");
 
   // ✅ Kiểm tra quyền admin
+
   useEffect(() => {
     if (role?.toUpperCase() !== "ADMIN") {
       alert("Bạn không có quyền truy cập trang này!");
+
       navigate("/");
     } else {
       fetchProducts();
     }
-  }, []);
+
+    // Thêm dependency để xóa cảnh báo ESlint
+  }, [role, navigate]);
 
   // ✅ Lấy danh sách sản phẩm
+
   const fetchProducts = async () => {
+    if (!API_URL) {
+      console.error("Lỗi: REACT_APP_API_URL chưa được cấu hình!");
+
+      return;
+    }
+
     try {
-      const res = await axios.get<Product[]>("/api/products");
+      // 🔑 SỬ DỤNG API_URL
+
+      const res = await axios.get<Product[]>(`${API_URL}/api/products`);
+
       console.log("📦 Dữ liệu sản phẩm:", res.data);
+
       setProducts(res.data);
     } catch (err) {
       console.error("❌ Lỗi khi tải sản phẩm:", err);
@@ -57,34 +98,59 @@ const AdminProductPage: React.FC = () => {
   };
 
   // ✅ Thêm hoặc cập nhật sản phẩm
+
   const handleAddOrUpdate = async () => {
+    if (!API_URL) {
+      alert("Lỗi cấu hình API. Vui lòng liên hệ quản trị viên.");
+
+      return;
+    }
+
     try {
       if (editing) {
         // 🛠️ Đang chỉnh sửa → PUT
+
         const updatedProduct = {
           name: editing.name,
+
           price: editing.price,
+
           stock: editing.stock,
+
           description: editing.description,
+
           image: editing.image,
         };
 
-        await axios.put(`/api/products/${editing.id}`, updatedProduct, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // 🔑 SỬ DỤNG API_URL
+
+        await axios.put(
+          `${API_URL}/api/products/${editing.id}`,
+          updatedProduct,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         alert("✅ Cập nhật sản phẩm thành công!");
       } else {
         // 🆕 Thêm mới → POST
+
         const newProductData = {
           name: newProduct.name,
+
           price: newProduct.price,
+
           stock: newProduct.stock,
+
           description: newProduct.description,
+
           image: newProduct.image,
         };
 
-        await axios.post("/api/products", newProductData, {
+        // 🔑 SỬ DỤNG API_URL
+
+        await axios.post(`${API_URL}/api/products`, newProductData, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -92,15 +158,23 @@ const AdminProductPage: React.FC = () => {
       }
 
       // 🔁 Làm mới form và danh sách
+
       setEditing(null);
+
       setNewProduct({
         id: 0,
+
         name: "",
+
         price: 0,
+
         stock: 0,
+
         description: "",
+
         image: "",
       });
+
       await fetchProducts();
     } catch (err) {
       console.error("❌ Lỗi khi thêm/cập nhật sản phẩm:", err);
@@ -108,16 +182,25 @@ const AdminProductPage: React.FC = () => {
   };
 
   // ✅ Xóa sản phẩm
+
   const handleDelete = async (id?: number) => {
     console.log("🆔 ID nhận được:", id);
+
     if (!id) return alert("❌ ID sản phẩm không hợp lệ!");
+
+    if (!API_URL) return alert("Lỗi cấu hình API.");
+
     if (!window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) return;
 
     try {
-      await axios.delete(`/api/products/${id}`, {
+      // 🔑 SỬ DỤNG API_URL
+
+      await axios.delete(`${API_URL}/api/products/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       alert("🗑️ Đã xóa sản phẩm!");
+
       fetchProducts();
     } catch (err) {
       console.error("❌ Lỗi khi xóa sản phẩm:", err);
@@ -125,10 +208,13 @@ const AdminProductPage: React.FC = () => {
   };
 
   // ✅ Chọn ảnh từ máy tính
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (file) {
       const imageUrl = URL.createObjectURL(file);
+
       if (editing) {
         setEditing({ ...editing, image: imageUrl });
       } else {
@@ -179,6 +265,7 @@ const AdminProductPage: React.FC = () => {
           <label htmlFor="imageInput" className="image-btn">
             <IconImage /> Chọn ảnh
           </label>
+
           <input
             id="imageInput"
             type="file"
@@ -186,6 +273,7 @@ const AdminProductPage: React.FC = () => {
             style={{ display: "none" }}
             onChange={handleImageUpload}
           />
+
           <input
             className="image-input"
             type="text"
@@ -223,6 +311,7 @@ const AdminProductPage: React.FC = () => {
           <button className="add-btn" onClick={handleAddOrUpdate}>
             {editing ? "💾 Cập nhật" : "➕ Thêm sản phẩm"}
           </button>
+
           {editing && (
             <button className="cancel-btn" onClick={() => setEditing(null)}>
               ❌ Hủy
@@ -235,27 +324,39 @@ const AdminProductPage: React.FC = () => {
         <thead>
           <tr>
             <th>Tên</th>
+
             <th>Giá</th>
+
             <th>Số lượng</th>
+
             <th>Mô tả</th>
+
             <th>Ảnh</th>
+
             <th>Hành động</th>
           </tr>
         </thead>
+
         <tbody>
           {products.map((p) => (
             <tr key={p.id}>
               <td>{p.name}</td>
+
               <td>{p.price}</td>
+
               <td>{p.stock}</td>
+
               <td>{p.description}</td>
+
               <td>
                 <img src={p.image} alt={p.name} width="80" />
               </td>
+
               <td className="action-buttons">
                 <button className="edit-btn" onClick={() => setEditing(p)}>
                   <IconEdit />
                 </button>
+
                 <button
                   className="delete-btn"
                   onClick={() => handleDelete(p.id)}

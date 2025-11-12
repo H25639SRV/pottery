@@ -1,27 +1,47 @@
 import React, { useEffect } from "react";
+
 import { useCart } from "../context/CartContext";
+
 import { useAuth } from "../context/AuthContext";
+
 import { useNavigate } from "react-router-dom";
+
 import axios from "axios";
+
 import "../styles/Cart.css";
+
+// 🔑 KHAI BÁO BIẾN MÔI TRƯỜNG API URL
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 const Cart: React.FC = () => {
   const { cart, fetchCart, removeFromCart } = useCart();
+
   const { user } = useAuth();
+
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user?.id) {
       fetchCart(user.id);
     }
-  }, [user?.id]);
+
+    // Cảnh báo ESlint: Thêm fetchCart vào dependency array
+  }, [user?.id, fetchCart]);
 
   const handleCheckout = async () => {
     if (!user?.id) return alert("Bạn chưa đăng nhập!");
+
+    if (!API_URL)
+      return alert("Lỗi cấu hình API. Vui lòng liên hệ quản trị viên.");
+
     try {
-      await axios.post("/api/cart/checkout", {
+      // 🔑 SỬ DỤNG API_URL
+
+      await axios.post(`${API_URL}/api/cart/checkout`, {
         userId: user.id,
       });
+
       navigate("/checkout");
     } catch (err) {
       console.error("❌ Lỗi thanh toán:", err);
@@ -30,6 +50,7 @@ const Cart: React.FC = () => {
 
   const total = cart.reduce(
     (sum, item) => sum + (item.product?.price || 0) * item.quantity,
+
     0
   );
 
@@ -45,13 +66,19 @@ const Cart: React.FC = () => {
             <thead>
               <tr>
                 <th>Ảnh</th>
+
                 <th>Sản phẩm</th>
+
                 <th>Giá</th>
+
                 <th>Số lượng</th>
+
                 <th>Tổng</th>
+
                 <th>Hành động</th>
               </tr>
             </thead>
+
             <tbody>
               {cart.map((item, i) => (
                 <tr key={i}>
@@ -66,15 +93,20 @@ const Cart: React.FC = () => {
                       className="cart-item-image"
                     />
                   </td>
+
                   <td>{item.product?.name}</td>
+
                   <td>{item.product?.price.toLocaleString()} VND</td>
+
                   <td>{item.quantity}</td>
+
                   <td>
                     {(
                       (item.product?.price || 0) * item.quantity
                     ).toLocaleString()}{" "}
                     VND
                   </td>
+
                   <td>
                     <button
                       className="remove-btn"
@@ -91,10 +123,12 @@ const Cart: React.FC = () => {
           </table>
 
           {/* Tổng tiền + nút thanh toán */}
+
           <div className="cart-summary">
             <h2 className="cart-total">
               Tổng cộng: <span>{total.toLocaleString()} VND</span>
             </h2>
+
             <button className="checkout-btn" onClick={handleCheckout}>
               ✅ Tiến hành thanh toán
             </button>

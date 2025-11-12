@@ -1,24 +1,40 @@
 import React, { useEffect, useState } from "react";
+
 import axios from "axios";
+
 import { useAuth } from "../context/AuthContext";
+
 import { useLocation } from "react-router-dom";
+
 import "../styles/Product.css";
+
+// 🔑 KHAI BÁO BIẾN MÔI TRƯỜNG API URL
+
+const API_URL = process.env.REACT_APP_API_URL || "";
 
 interface Product {
   id: number;
+
   name: string;
+
   price: number;
+
   image: string;
 }
 
 const Product: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
+
   const [filtered, setFiltered] = useState<Product[]>([]);
+
   const { user } = useAuth();
+
   const userId = user?.id;
+
   const location = useLocation();
 
   const queryParams = new URLSearchParams(location.search);
+
   const searchTerm = queryParams.get("query")?.toLowerCase() || "";
 
   useEffect(() => {
@@ -30,6 +46,7 @@ const Product: React.FC = () => {
       const results = products.filter((p) =>
         p.name.toLowerCase().includes(searchTerm)
       );
+
       setFiltered(results);
     } else {
       setFiltered(products);
@@ -38,7 +55,10 @@ const Product: React.FC = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get<Product[]>("/api/products");
+      // ✅ Sửa lỗi đường dẫn: Dùng API_URL
+
+      const res = await axios.get<Product[]>(`${API_URL}/api/products`);
+
       setProducts(res.data);
     } catch (err) {
       console.error("❌ Lỗi tải sản phẩm:", err);
@@ -54,16 +74,23 @@ const Product: React.FC = () => {
       ) {
         window.location.href = "/login";
       }
+
       return;
     }
 
     try {
-      await axios.post("/api/cart/add", {
+      // ✅ Sửa lỗi đường dẫn: Dùng API_URL
+
+      await axios.post(`${API_URL}/api/cart/add`, {
         userId,
+
         productId,
+
         quantity: 1,
       });
+
       alert("🛒 Đã thêm vào giỏ hàng!");
+
       if (
         window.confirm("Đã thêm vào giỏ hàng, bạn muốn vào giỏ hàng xem không?")
       ) {
@@ -71,6 +98,7 @@ const Product: React.FC = () => {
       }
     } catch (err) {
       console.error("❌ Lỗi thêm giỏ hàng:", err);
+
       alert("Không thể thêm sản phẩm vào giỏ hàng!");
     }
   };
@@ -82,6 +110,7 @@ const Product: React.FC = () => {
           ? `Kết quả tìm kiếm cho: "${searchTerm}"`
           : "Bộ sưu tập sản phẩm"}
       </h1>
+
       <div className="product-grid">
         {filtered.length > 0 ? (
           filtered.map((product) => (
@@ -91,10 +120,13 @@ const Product: React.FC = () => {
                 alt={product.name}
                 className="product-image"
               />
+
               <h2 className="product-name">{product.name}</h2>
+
               <p className="product-price">
                 {product.price.toLocaleString()} VND
               </p>
+
               <button
                 onClick={() => addToCart(product.id)}
                 className="add-to-cart"
@@ -107,6 +139,10 @@ const Product: React.FC = () => {
           <p>Không tìm thấy sản phẩm phù hợp.</p>
         )}
       </div>
+
+      {searchTerm && filtered.length === 0 && (
+        <p>Không tìm thấy sản phẩm nào khớp với tìm kiếm.</p>
+      )}
     </div>
   );
 };

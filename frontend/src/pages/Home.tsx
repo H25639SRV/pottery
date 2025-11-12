@@ -1,32 +1,51 @@
 import React, { useState, useEffect } from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import axios from "axios";
+
 import { useCart } from "../context/CartContext";
+
 import { useAuth } from "../context/AuthContext";
+
 import "../styles/Home.css";
+
+// 🔑 KHAI BÁO BIẾN MÔI TRƯỜNG API URL
+
+const API_URL = process.env.REACT_APP_API_URL || "";
 
 interface Product {
   id: number; // 👈 đổi từ _id thành id để đồng nhất với backend
+
   name: string;
+
   price: number;
+
   image: string;
 }
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+
   const [currentImage, setCurrentImage] = useState(0);
+
   const [products, setProducts] = useState<Product[]>([]);
+
   const { addToCart } = useCart();
+
   const { user } = useAuth();
 
   const backgroundImages = [
     "/image/potterybackground.png",
+
     "/image/potterybackground2.png",
+
     "/image/potterybackground3.png",
   ];
 
   useEffect(() => {
     const interval = setInterval(() => nextImage(), 6000);
+
     return () => clearInterval(interval);
   }, []);
 
@@ -36,13 +55,19 @@ const Home: React.FC = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get<Product[]>("/api/products");
+      // ✅ Sửa lỗi đường dẫn: Dùng API_URL
+
+      const res = await axios.get<Product[]>(`${API_URL}/api/products`);
 
       // 🔧 ép kiểu id nếu backend trả về _id dạng string
+
       const formatted = res.data.map((p: any) => ({
         id: Number(p.id || p._id),
+
         name: p.name,
+
         price: p.price,
+
         image: p.image,
       }));
 
@@ -65,12 +90,17 @@ const Home: React.FC = () => {
   const handleAddToCart = async (productId: number) => {
     if (!user?.id) {
       alert("⚠️ Vui lòng đăng nhập trước khi thêm sản phẩm vào giỏ hàng!");
+
       return;
     }
 
     try {
+      // Hàm này gọi đến CartContext.tsx, cần kiểm tra file đó
+
       await addToCart(user.id, productId, 1);
+
       alert("🛒 Sản phẩm đã được thêm vào giỏ hàng!");
+
       if (
         window.confirm("Đã thêm vào giỏ hàng, bạn muốn vào giỏ hàng xem không?")
       ) {
@@ -78,6 +108,7 @@ const Home: React.FC = () => {
       }
     } catch (err) {
       console.error("❌ Lỗi thêm vào giỏ hàng:", err);
+
       alert("Không thể thêm sản phẩm vào giỏ hàng!");
     }
   };
@@ -85,6 +116,7 @@ const Home: React.FC = () => {
   return (
     <div className="home-container">
       {/* Slideshow */}
+
       <div className="hero-wrapper">
         {backgroundImages.map((img, index) => (
           <div
@@ -98,7 +130,9 @@ const Home: React.FC = () => {
 
         <div className="hero-overlay">
           <h1 className="home-title">Chào mừng đến với Mộc Gốm</h1>
+
           <p className="home-subtitle">Tinh hoa Gốm Việt</p>
+
           <button className="home-button" onClick={() => navigate("/products")}>
             Bộ sưu tập
           </button>
@@ -107,6 +141,7 @@ const Home: React.FC = () => {
         <button className="arrow left" onClick={prevImage}>
           ❮
         </button>
+
         <button className="arrow right" onClick={nextImage}>
           ❯
         </button>
@@ -123,24 +158,33 @@ const Home: React.FC = () => {
       </div>
 
       {/* Sản phẩm nổi bật */}
+
       <h2 className="featured-title">Sản phẩm nổi bật</h2>
+
       <div className="product-grid">
         {products.map((p) => (
           <div key={p.id} className="product-card">
             <img src={p.image} alt={p.name} className="product-img" />
+
             <h3>{p.name}</h3>
+
             <p>{p.price.toLocaleString()} VND</p>
+
             <button onClick={() => handleAddToCart(p.id)}>Thêm vào giỏ</button>
           </div>
         ))}
       </div>
 
       {/* Feature boxes */}
+
       <div className="feature-container">
         {[
           "Tinh hoa Gốm Việt",
+
           "Nét đẹp thủ công",
+
           "Vẻ đẹp văn hóa",
+
           "Hồn Việt trong đồ gốm",
         ].map((title, index) => (
           <div className="feature-box" key={index}>
@@ -151,6 +195,7 @@ const Home: React.FC = () => {
                 className="feature-icon"
               />
             </div>
+
             <h5 className="feature-title">{title}</h5>
           </div>
         ))}

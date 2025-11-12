@@ -1,13 +1,24 @@
 import React, { useEffect, useState } from "react";
+
 import { useLocation } from "react-router-dom";
+
 import axios from "axios";
+
 import "../styles/Search.css";
+
+// 🔑 KHAI BÁO BIẾN MÔI TRƯỜNG API URL
+
+const API_URL = process.env.REACT_APP_API_URL || "";
 
 interface Product {
   id: number;
+
   name: string;
+
   price: number;
+
   image?: string;
+
   image_url?: string;
 }
 
@@ -17,20 +28,28 @@ function useQuery() {
 
 const Search: React.FC = () => {
   const query = useQuery();
+
   const searchTerm = query.get("query")?.toLowerCase() || "";
+
   const [results, setResults] = useState<Product[]>([]);
+
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
+
       try {
-        const res = await axios.get<Product[]>("/api/product");
+        // ✅ Sửa lỗi đường dẫn: Dùng API_URL
+
+        const res = await axios.get<Product[]>(`${API_URL}/api/product`);
+
         const allProducts = res.data;
 
         const filtered = allProducts.filter((p) =>
           p.name.toLowerCase().includes(searchTerm)
         );
+
         setResults(filtered);
       } catch (err) {
         console.error("❌ Lỗi tải sản phẩm:", err);
@@ -62,7 +81,9 @@ const Search: React.FC = () => {
                   alt={p.name}
                   className="search-image"
                 />
+
                 <h3>{p.name}</h3>
+
                 <p className="search-price">{p.price.toLocaleString()} VND</p>
               </div>
             ))

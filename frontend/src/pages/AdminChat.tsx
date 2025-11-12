@@ -2,7 +2,21 @@ import React, { useState, useEffect } from "react";
 import io from "socket.io-client";
 import "../styles/Chat.css";
 
-const socket = io("http://localhost:5000");
+// 🔑 KHAI BÁO VÀ SỬ DỤNG BIẾN MÔI TRƯỜNG API
+// Thay thế địa chỉ cố định 'http://localhost:5000' bằng biến môi trường
+// Biến này sẽ chứa URL Ngrok (hoặc domain Production sau này)
+const API_URL = process.env.REACT_APP_API_URL;
+
+// Kiểm tra để tránh lỗi nếu biến môi trường chưa được đặt (chỉ nên xảy ra khi dev cục bộ)
+if (!API_URL) {
+  console.error(
+    "Lỗi: REACT_APP_API_URL chưa được cấu hình. Sử dụng localhost làm dự phòng."
+  );
+}
+
+// Socket.IO sẽ kết nối đến API_URL (Ngrok URL)
+// Nếu API_URL rỗng, nó sẽ tự động kết nối đến URL cơ sở, nhưng dùng URL tường minh là tốt nhất.
+const socket = io(API_URL || "http://localhost:5000");
 
 const AdminChat: React.FC = () => {
   const [roomId, setRoomId] = useState("");

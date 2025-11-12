@@ -4,6 +4,10 @@ import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Auth.css";
+import { getApiUrl } from "../config/apiConfig";
+
+// Khai báo biến môi trường API
+const API_URL = process.env.REACT_APP_API_URL;
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -18,9 +22,15 @@ const LoginPage: React.FC = () => {
       return;
     }
 
+    if (!API_URL) {
+      console.error("Lỗi: REACT_APP_API_URL chưa được cấu hình!");
+      alert("Lỗi cấu hình API. Vui lòng liên hệ quản trị viên.");
+      return;
+    }
+
     try {
       setLoading(true);
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(getApiUrl("/api/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

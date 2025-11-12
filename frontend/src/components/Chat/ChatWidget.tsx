@@ -22,8 +22,10 @@ interface RoomInfo {
   lastMessage?: string; // <== Đã thêm thuộc tính này
 }
 
-// Giả định ENDPOINT là backend service
-const ENDPOINT = `http://${window.location.hostname}:5000`; // Hoặc `http://localhost:5000` nếu chạy local
+// 🔑 KHAI BÁO BIẾN MÔI TRƯỜNG CHAT API URL
+const CHAT_API_URL =
+  process.env.REACT_APP_CHAT_API_URL || "http://localhost:5000";
+const ENDPOINT = CHAT_API_URL;
 
 const ChatWidget: React.FC<ChatWidgetProps> = () => {
   const auth = useAuth();
@@ -39,9 +41,8 @@ const ChatWidget: React.FC<ChatWidgetProps> = () => {
   const [roomId, setRoomId] = useState<string | null>(null);
   const roomIdRef = useRef<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(""); // 🎯 Sửa lỗi: Sử dụng RoomInfo đã được cập nhật
 
-  // 🎯 Sửa lỗi: Sử dụng RoomInfo đã được cập nhật
   const [activeRooms, setActiveRooms] = useState<RoomInfo[]>([]);
 
   const messagesRef = useRef<HTMLDivElement | null>(null);
@@ -56,6 +57,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = () => {
   }, []);
 
   useEffect(() => {
+    // ✅ SỬ DỤNG ENDPOINT ĐÃ CẬP NHẬT
     const socket = io(ENDPOINT, { transports: ["websocket"] });
     socketRef.current = socket;
 
@@ -74,15 +76,13 @@ const ChatWidget: React.FC<ChatWidgetProps> = () => {
         roomIdRef.current = payload.roomId;
         setRoomId(payload.roomId);
       }
-    });
+    }); // 🎯 Cập nhật kiểu dữ liệu cho rooms
 
-    // 🎯 Cập nhật kiểu dữ liệu cho rooms
     socket.on("active-rooms", (rooms: RoomInfo[]) => {
       setActiveRooms((prevRooms) => {
         // Tối ưu hóa: Giữ lại lastMessage của phòng cũ
         return rooms.map((room) => {
-          const existing = prevRooms.find((r) => r.id === room.id);
-          // Sử dụng lastMessage từ existing nếu room mới không cung cấp (hoặc ngược lại)
+          const existing = prevRooms.find((r) => r.id === room.id); // Sử dụng lastMessage từ existing nếu room mới không cung cấp (hoặc ngược lại)
           return {
             ...room,
             lastMessage: existing?.lastMessage || room.lastMessage,
@@ -140,12 +140,10 @@ const ChatWidget: React.FC<ChatWidgetProps> = () => {
   };
 
   const handleAdminJoin = (room: RoomInfo) => {
-    if (!socketRef.current) return;
+    if (!socketRef.current) return; // Admin join phòng cụ thể
 
-    // Admin join phòng cụ thể
-    socketRef.current.emit("join-room-admin", room.id);
+    socketRef.current.emit("join-room-admin", room.id); // Cập nhật state và ref
 
-    // Cập nhật state và ref
     roomIdRef.current = room.id;
     setRoomId(room.id);
     setMessages([]);
@@ -171,9 +169,8 @@ const ChatWidget: React.FC<ChatWidgetProps> = () => {
       createdAt: new Date().toISOString(),
     };
 
-    socketRef.current.emit("chat-message", msg);
+    socketRef.current.emit("chat-message", msg); // Tự động hiển thị tin nhắn của mình ngay lập tức
 
-    // Tự động hiển thị tin nhắn của mình ngay lập tức
     addMessage(msg);
 
     setInput("");
@@ -181,11 +178,17 @@ const ChatWidget: React.FC<ChatWidgetProps> = () => {
 
   const AdminChatView = () => (
     <div className="chat-box floating admin-layout">
+           {" "}
       <div className="admin-rooms-sidebar">
+               {" "}
         <div className="chat-header sidebar-header">
-          <strong>Cuộc trò chuyện đang chờ ({activeRooms.length})</strong>
+                   {" "}
+          <strong>Cuộc trò chuyện đang chờ ({activeRooms.length})</strong>     
+           {" "}
         </div>
+               {" "}
         <div className="admin-rooms-list">
+                   {" "}
           {activeRooms.length === 0 ? (
             <div className="empty-text">Không có phòng nào đang hoạt động.</div>
           ) : (
@@ -195,47 +198,66 @@ const ChatWidget: React.FC<ChatWidgetProps> = () => {
                 className={`room-item ${r.id === roomId ? "active-room" : ""}`}
                 onClick={() => handleAdminJoin(r)}
               >
+                               {" "}
                 <div className="room-info">
-                  <strong className="guest-name">{r.guestName}</strong>
-                  {/* Cắt bớt ID phòng để hiển thị gọn hơn */}
+                                   {" "}
+                  <strong className="guest-name">{r.guestName}</strong>         
+                          {/* Cắt bớt ID phòng để hiển thị gọn hơn */}         
+                         {" "}
                   <div className="room-id">
-                    ID: {r.id.split("-").slice(0, 2).join("-")}
+                                        ID:{" "}
+                    {r.id.split("-").slice(0, 2).join("-")}                 {" "}
                   </div>
+                                   {" "}
                   {r.lastMessage && (
                     <div className="last-msg">
-                      {r.lastMessage.substring(0, 30)}
-                      {r.lastMessage.length > 30 ? "..." : ""}
+                                            {r.lastMessage.substring(0, 30)}   
+                                        {r.lastMessage.length > 30 ? "..." : ""}
+                                         {" "}
                     </div>
                   )}
+                                 {" "}
                 </div>
+                               {" "}
                 <div className="room-action">
-                  {r.id === roomId ? "Đang xem" : "Vào"}
+                                    {r.id === roomId ? "Đang xem" : "Vào"}     
+                           {" "}
                 </div>
+                             {" "}
               </div>
             ))
           )}
+                 {" "}
         </div>
+             {" "}
       </div>
-
+           {" "}
       <div className="admin-chat-view">
+               {" "}
         <div className="chat-header">
-          <div>👩‍💼 **Admin: {username}**</div>
+                    <div>👩‍💼 **Admin: {username}**</div>         {" "}
           <div style={{ fontSize: 12, opacity: 0.9 }}>
+                       {" "}
             {roomId
               ? `Phòng: ${
                   activeRooms.find((r) => r.id === roomId)?.guestName || roomId
                 }`
               : "Chưa chọn phòng"}
+                     {" "}
           </div>
+                   {" "}
           <button className="close-btn" onClick={() => setOpen(false)}>
-            ✕
+                        ✕          {" "}
           </button>
+                 {" "}
         </div>
-
+               {" "}
         <div ref={messagesRef} className="chat-body">
+                   {" "}
           {!roomId ? (
             <div className="empty-text">
-              Chọn một phòng chat ở cột bên trái để xem cuộc trò chuyện.
+                            Chọn một phòng chat ở cột bên trái để xem cuộc trò
+              chuyện.            {" "}
             </div>
           ) : messages.length === 0 ? (
             <div className="empty-text">Bắt đầu trò chuyện!</div>
@@ -266,25 +288,32 @@ const ChatWidget: React.FC<ChatWidgetProps> = () => {
 
               return (
                 <div key={i} className={`chat-message ${cls}`}>
+                                   {" "}
                   <div className="sender">
-                    <strong>{senderDisplay}</strong>{" "}
+                                        <strong>{senderDisplay}</strong>        
+                               {" "}
                     <span className="time">
+                                           {" "}
                       {m.createdAt
                         ? new Date(m.createdAt).toLocaleTimeString("vi-VN", {
                             hour: "2-digit",
                             minute: "2-digit",
                           })
                         : ""}
+                                       {" "}
                     </span>
+                                     {" "}
                   </div>
-                  <div>{m.text}</div>
+                                    <div>{m.text}</div>               {" "}
                 </div>
               );
             })
           )}
+                 {" "}
         </div>
-
+               {" "}
         <div className="chat-footer">
+                   {" "}
           <input
             type="text"
             value={input}
@@ -295,30 +324,39 @@ const ChatWidget: React.FC<ChatWidgetProps> = () => {
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             disabled={!roomId}
           />
+                   {" "}
           <button onClick={handleSend} disabled={!roomId}>
-            Gửi
+                        Gửi          {" "}
           </button>
+                 {" "}
         </div>
+             {" "}
       </div>
+         {" "}
     </div>
   );
 
   const GuestChatView = () => (
     <div className="chat-box floating">
+           {" "}
       <div className="chat-header">
-        <div>🧑‍🍳 Khách hàng: **{username}**</div>
+                <div>🧑‍🍳 Khách hàng: **{username}**</div>       {" "}
         <div style={{ fontSize: 12, opacity: 0.9 }}>
-          {roomId || "Đang tạo phòng..."}
+                    {roomId || "Đang tạo phòng..."}       {" "}
         </div>
+               {" "}
         <button className="close-btn" onClick={() => setOpen(false)}>
-          ✕
+                    ✕        {" "}
         </button>
+             {" "}
       </div>
-
+           {" "}
       <div ref={messagesRef} className="chat-body">
+               {" "}
         {messages.length === 0 ? (
           <div className="empty-text">
-            Hãy gửi tin nhắn để bắt đầu trò chuyện cùng Mộc Gốm 🌿
+                        Hãy gửi tin nhắn để bắt đầu trò chuyện cùng Mộc Gốm 🌿  
+                   {" "}
           </div>
         ) : (
           messages.map((m, i) => {
@@ -342,25 +380,32 @@ const ChatWidget: React.FC<ChatWidgetProps> = () => {
 
             return (
               <div key={i} className={`chat-message ${cls}`}>
+                               {" "}
                 <div className="sender">
-                  <strong>{senderDisplay}</strong>{" "}
+                                    <strong>{senderDisplay}</strong>            
+                       {" "}
                   <span className="time">
+                                       {" "}
                     {m.createdAt
                       ? new Date(m.createdAt).toLocaleTimeString("vi-VN", {
                           hour: "2-digit",
                           minute: "2-digit",
                         })
                       : ""}
+                                     {" "}
                   </span>
+                                 {" "}
                 </div>
-                <div>{m.text}</div>
+                                <div>{m.text}</div>             {" "}
               </div>
             );
           })
         )}
+             {" "}
       </div>
-
+           {" "}
       <div className="chat-footer">
+               {" "}
         <input
           type="text"
           value={input}
@@ -368,24 +413,29 @@ const ChatWidget: React.FC<ChatWidgetProps> = () => {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
+               {" "}
         <button onClick={handleSend} disabled={!roomId}>
-          Gửi
+                    Gửi        {" "}
         </button>
+               {" "}
       </div>
+         {" "}
     </div>
   );
 
   return (
     <>
+           {" "}
       <button
         className="chat-circle"
         onClick={handleOpen}
         aria-label="Open chat"
       >
-        💬
+                💬      {" "}
       </button>
-
-      {open && (userRole === "admin" ? <AdminChatView /> : <GuestChatView />)}
+           {" "}
+      {open && (userRole === "admin" ? <AdminChatView /> : <GuestChatView />)} 
+       {" "}
     </>
   );
 };
