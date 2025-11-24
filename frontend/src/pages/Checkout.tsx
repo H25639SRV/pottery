@@ -1,34 +1,77 @@
 import React, { useState } from "react";
+import axios from "axios"; // ✅ Cần import axios
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Checkout.css";
 
+const API_URL = process.env.REACT_APP_API_URL || "";
+
 const Checkout: React.FC = () => {
   const { cart, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, token } = useAuth(); // ✅ Cần lấy token để gửi kèm request
+
+  const [address, setAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"none" | "qr" | "cod">(
     "none"
   );
+  const [isSubmitting, setIsSubmitting] = useState(false); // Trạng thái đang gửi
 
   const total = cart.reduce(
     (sum, item) => sum + (item.product?.price || 0) * item.quantity,
     0
   );
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    // 1. Validation
     if (cart.length === 0) {
       alert("⚠️ Giỏ hàng trống!");
       return;
     }
-
-    if (paymentMethod === "qr") {
-      alert("🎉 Thanh toán bằng QR thành công! Cảm ơn bạn đã mua hàng ❤️");
-      clearCart();
-    } else if (paymentMethod === "cod") {
-      alert("✅ Đơn hàng sẽ được giao và thanh toán khi nhận hàng.");
-      clearCart();
-    } else {
+    if (!address.trim()) {
+      alert("⚠️ Vui lòng nhập địa chỉ giao hàng!");
+      return;
+    }
+    if (paymentMethod === "none") {
       alert("⚠️ Vui lòng chọn phương thức thanh toán!");
+      return;
+    }
+
+    // 2. Gửi dữ liệu xuống Backend
+    setIsSubmitting(true);
+    try {
+      // ✅ GỌI API TẠO ĐƠN HÀNG THỰC TẾ
+      await axios.post(
+        `${API_URL}/api/orders`,
+        {
+          items: cart,
+          total: total,
+          address: address, // 🔥 QUAN TRỌNG: Gửi địa chỉ xuống
+          paymentMethod: paymentMethod, // Gửi phương thức thanh toán
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Xác thực người dùng
+          },
+        }
+      );
+
+      // 3. Xử lý thành công
+      if (paymentMethod === "qr") {
+        alert(
+          `🎉 Đơn hàng đã được tạo thành công!\nĐịa chỉ: ${address}\nVui lòng quét mã QR để hoàn tất.`
+        );
+      } else {
+        alert(`✅ Đặt hàng thành công!\nĐơn hàng sẽ giao tới: ${address}`);
+      }
+
+      clearCart();
+      setAddress("");
+      setPaymentMethod("none");
+    } catch (error: any) {
+      console.error("Lỗi đặt hàng:", error);
+      alert("❌ Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại!");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -71,6 +114,19 @@ const Checkout: React.FC = () => {
               <strong>Tổng cộng:</strong> {total.toLocaleString()} VND
             </div>
 
+            {/* Nhập địa chỉ */}
+            <div className="checkout-section">
+              <h3>📍 Địa chỉ nhận hàng:</h3>
+              <textarea
+                className="address-input"
+                placeholder="Nhập số nhà, tên đường, phường/xã..."
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            {/* Chọn thanh toán */}
             <h3>Chọn phương thức thanh toán:</h3>
             <div className="payment-options">
               <button
@@ -102,8 +158,12 @@ const Checkout: React.FC = () => {
               </div>
             )}
 
-            <button onClick={handleConfirm} className="checkout-btn">
-              ✅ Xác nhận đặt hàng
+            <button
+              onClick={handleConfirm}
+              className="checkout-btn"
+              disabled={isSubmitting} // Disable nút khi đang gửi
+            >
+              {isSubmitting ? "⏳ Đang xử lý..." : "✅ Xác nhận đặt hàng"}
             </button>
           </>
         )}

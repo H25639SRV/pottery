@@ -22,37 +22,47 @@ services:
       retries: 5
 
   # ========================
-  # ⚙️ Backend (Node + Express)
+  # ⚙️ Backend (Node + Express) - Production Setup
   # ========================
   backend:
+    # Build image từ thư mục backend
     build:
       context: ./backend
       dockerfile: Dockerfile
     restart: always
+
+    # Sử dụng env_file (nếu cần thiết cho biến môi trường khác)
     env_file:
       - ./backend/.env
+
+    # Kết nối DB trong mạng nội bộ Docker
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/pottery?schema=public
+      # Thêm biến môi trường cho môi trường Production (Nếu cần)
+      - NODE_ENV=production
+
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      # Expose port 5000 để Ngrok có thể truy cập
-      - "5000:5000"
-    volumes:
-      # Code backend đồng bộ với container
-      - ./backend:/app
-      - /app/node_modules
 
-      # Lưu ảnh render, upload, assets ra ngoài host để dễ xem
+    # Ánh xạ cổng ra Host để Nginx có thể truy cập (103.77.240.74:5000)
+    ports:
+      - "5000:5000"
+
+    # ⚠️ CHỈ GIỮ CÁC VOLUME CHO DỮ LIỆU CẦN LƯU TRỮ (ví dụ: ảnh upload, log)
+    # ⚠️ ĐÃ LOẠI BỎ VOLUME ĐỒNG BỘ MÃ NGUỒN (./backend:/app)
+    volumes:
+      # Lưu ảnh render, upload, assets ra ngoài host để dễ xem và persistent
       - ./backend/public:/app/public
       - ./backend/src/assets:/app/src/assets
-    # Lệnh chạy sau khi container start
+
+    # Lệnh khởi động (Bỏ npm run build vì nó đã được chạy trong Dockerfile Stage 1)
     command: >
       sh -c "
-        # Chạy migration trước (Quan trọng!)
         npx prisma migrate deploy && 
-        npm run build &&
         node dist/server.js
       "
+
 # ========================
 # 💾 Volumes
 # ========================

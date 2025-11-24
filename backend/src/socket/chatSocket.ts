@@ -1,5 +1,8 @@
 import { Server, Socket } from "socket.io";
-import { getGeminiReply } from "../services/chatbotService"; // Dùng từ services vì bot logic nằm ở đó
+import { PrismaClient } from "@prisma/client";
+import { getGeminiReply } from "../services/chatbotService"; // Đảm bảo đường dẫn đúng
+
+const prisma = new PrismaClient();
 
 interface ChatMessage {
   sender: string;
@@ -14,66 +17,109 @@ interface RoomInfo {
   guestName: string;
 }
 
-// KHÔNG DÙNG DB: Lưu tạm thời trong bộ nhớ
-const messageHistory: Record<string, ChatMessage[]> = {};
+// Bộ nhớ tạm để Admin biết phòng nào đang Active (Online)
 const activeRooms: RoomInfo[] = [];
 
-/**
- * Socket Chat Controller
- * - Guest tạo phòng tự động
- * - Admin nhận danh sách phòng và có thể join
- * - Bot chỉ phản hồi khi admin chưa tham gia
- */
 export function initChatSocket(io: Server) {
   io.on("connection", (socket: Socket) => {
     console.log(`🟢 Client connected: ${socket.id}`);
 
-    // ===== GUEST JOIN & CREATE ROOM =====
-    socket.on("join-guest", (username: string) => {
-      // 1. Tạo Room ID
-      const roomId = `room-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-      socket.join(roomId);
+    // ===========================================
+    // 1. GUEST JOIN (Xử lý Logic kết nối lại)
+    // ===========================================
+    socket.on(
+      "join-guest",
+      async (payload: { username: string; roomId?: string }) => {
+        let roomId = payload.roomId;
+        const username = payload.username || "Khách";
 
-      // 2. Gửi Room ID lại cho Guest
-      socket.emit("room-created", { roomId });
+        // Nếu không có roomId cũ (hoặc null), tạo mới
+        if (!roomId) {
+          roomId = `room-${username}-${Date.now()}`;
+        }
 
-      // 3. Cập nhật rooms nếu chưa có
-      if (!activeRooms.find((r) => r.id === roomId)) {
-        activeRooms.push({ id: roomId, guestName: username });
-        // 4. Thông báo cho tất cả admin
-        io.to("admin-room").emit("active-rooms", activeRooms);
+        // Join socket vào phòng
+        socket.join(roomId);
+
+        // Gửi lại roomId để frontend lưu vào localStorage
+        socket.emit("room-created", { roomId });
+
+        // Thêm vào danh sách Active nếu chưa có
+        if (!activeRooms.find((r) => r.id === roomId)) {
+          activeRooms.push({ id: roomId!, guestName: username });
+          io.to("admin-room").emit("active-rooms", activeRooms);
+        }
+
+        console.log(`🧑‍🍳 Guest ${username} joined room ${roomId}`);
+
+        // 🔥 QUAN TRỌNG: Lấy lịch sử chat từ Database trả về cho Guest
+        try {
+          const history = await prisma.message.findMany({
+            where: { roomId: roomId },
+            orderBy: { createdAt: "asc" },
+          });
+
+          // Format lại dữ liệu cho khớp interface Frontend
+          const formattedHistory: ChatMessage[] = history.map((msg) => ({
+            sender: msg.sender,
+            text: msg.text,
+            roomId: msg.roomId,
+            role: msg.role as "admin" | "guest" | "bot",
+            createdAt: msg.createdAt.toISOString(),
+          }));
+
+          socket.emit("chat-history", formattedHistory);
+        } catch (err) {
+          console.error("❌ Lỗi lấy lịch sử chat:", err);
+        }
       }
+    );
 
-      console.log(`🧑‍🍳 Guest ${username} created room ${roomId}`);
-    });
+    // ===========================================
+    // 2. ADMIN JOIN
+    // ===========================================
 
-    // Admin join phòng chat (để nhận danh sách phòng)
+    // Admin join phòng tổng quản lý
     socket.on("join-admin", () => {
       socket.join("admin-room");
       console.log(`🛠️ Admin ${socket.id} joined admin-room`);
       socket.emit("active-rooms", activeRooms);
     });
 
-    // Admin join phòng chat CỤ THỂ
-    socket.on("join-room-admin", (roomId: string) => {
-      // 1. Join phòng mới
+    // Admin join vào một phòng chat cụ thể để xem và chat
+    socket.on("join-room-admin", async (roomId: string) => {
       socket.join(roomId);
       console.log(`👩‍💼 Admin joined room ${roomId}`);
 
-      // 2. Gửi lịch sử chat
-      if (messageHistory[roomId]) {
-        socket.emit("chat-history", messageHistory[roomId]);
-      } else {
+      try {
+        // Lấy lịch sử từ DB
+        const history = await prisma.message.findMany({
+          where: { roomId: roomId },
+          orderBy: { createdAt: "asc" },
+        });
+
+        const formattedHistory: ChatMessage[] = history.map((msg) => ({
+          sender: msg.sender,
+          text: msg.text,
+          roomId: msg.roomId,
+          role: msg.role as "admin" | "guest" | "bot",
+          createdAt: msg.createdAt.toISOString(),
+        }));
+
+        socket.emit("chat-history", formattedHistory);
+      } catch (error) {
+        console.error("❌ Lỗi lấy lịch sử chat cho Admin:", error);
         socket.emit("chat-history", []);
       }
     });
 
-    // Yêu cầu danh sách phòng hiện có
     socket.on("request-active-rooms", () => {
       socket.emit("active-rooms", activeRooms);
     });
 
-    // ===== CHAT MESSAGE =====
+    // ===========================================
+    // 3. XỬ LÝ TIN NHẮN & BOT
+    // ===========================================
     socket.on(
       "chat-message",
       async (msg: {
@@ -81,47 +127,48 @@ export function initChatSocket(io: Server) {
         text: string;
         roomId: string;
         role: "guest" | "admin";
-        createdAt?: string;
       }) => {
-        console.log(
-          `💬 Message from ${msg.sender} (${msg.role}) in ${msg.roomId}: ${msg.text}`
-        );
-
-        if (!messageHistory[msg.roomId]) messageHistory[msg.roomId] = [];
+        // 1. Gửi realtime cho người khác trong phòng (trừ người gửi)
         const chatMsg: ChatMessage = {
           sender: msg.sender,
           text: msg.text,
           roomId: msg.roomId,
           role: msg.role,
-          createdAt: msg.createdAt || new Date().toISOString(),
+          createdAt: new Date().toISOString(),
         };
-        messageHistory[msg.roomId].push(chatMsg);
 
-        // Gửi tin nhắn tới tất cả trong phòng (trừ người gửi)
-        // **LƯU Ý:** Vì ChatWidget đã tự hiển thị tin nhắn của mình, ta dùng socket.to()
         socket.to(msg.roomId).emit("chat-message", chatMsg);
-
-        // Gửi thông báo đến Admin-room (cập nhật preview tin nhắn)
         io.to("admin-room").emit("new-message-in-room", {
           roomId: msg.roomId,
           preview: msg.text,
         });
 
-        // Nếu khách gửi → bot phản hồi khi chưa có admin
+        // 2. Lưu vào Database (Bất đồng bộ)
+        try {
+          await prisma.message.create({
+            data: {
+              sender: msg.sender,
+              text: msg.text,
+              roomId: msg.roomId,
+              role: msg.role,
+            },
+          });
+        } catch (err) {
+          console.error("❌ Lỗi lưu tin nhắn:", err);
+        }
+
+        // 3. Logic Bot trả lời (Chỉ khi Guest nhắn và không có Admin trong phòng)
         if (msg.role === "guest") {
           const room = io.sockets.adapter.rooms.get(msg.roomId);
-
-          // Kiểm tra: Có bất kỳ socket nào trong phòng này đang join 'admin-room' không
+          // Check xem có socket nào trong phòng này đang join 'admin-room' không
           const hasAdmin =
             room &&
             Array.from(room).some((id) => {
               const s = io.sockets.sockets.get(id);
-              // Kiểm tra socket đó có join 'admin-room' không
               return s?.rooms.has("admin-room");
             });
 
           if (!hasAdmin) {
-            // Nếu KHÔNG CÓ Admin trong phòng
             try {
               const replyText = await getGeminiReply(msg.text);
               const botMsg: ChatMessage = {
@@ -131,51 +178,53 @@ export function initChatSocket(io: Server) {
                 role: "bot",
                 createdAt: new Date().toISOString(),
               };
-              messageHistory[msg.roomId].push(botMsg);
 
-              // Gửi tin nhắn bot tới phòng
+              // Gửi socket
               io.to(msg.roomId).emit("chat-message", botMsg);
-
-              // **Tối ưu hóa:** Cập nhật lại danh sách phòng trên Admin-room với tin nhắn cuối là của Bot
               io.to("admin-room").emit("new-message-in-room", {
                 roomId: msg.roomId,
                 preview: botMsg.text,
               });
+
+              // Lưu bot reply
+              await prisma.message.create({
+                data: {
+                  sender: "Bot",
+                  text: replyText,
+                  roomId: msg.roomId,
+                  role: "bot",
+                },
+              });
             } catch (err) {
               console.error("🤖 Bot error:", err);
-              // ... (Logic Fallback Bot giữ nguyên)
             }
           }
         }
       }
     );
 
-    // ===== DISCONNECT =====
+    // ===========================================
+    // 4. DISCONNECT
+    // ===========================================
     socket.on("disconnect", () => {
       console.log(`🔴 Client disconnected: ${socket.id}`);
 
-      // Cập nhật lại danh sách phòng
+      // Dọn dẹp Active Rooms (Chỉ xóa khỏi list hiển thị, không xóa DB)
       for (let i = activeRooms.length - 1; i >= 0; i--) {
         const room = activeRooms[i];
         const roomObj = io.sockets.adapter.rooms.get(room.id);
 
-        // Nếu không còn ai trong phòng và không còn ai là Admin đang xem phòng đó
         const hasActiveUsers =
           roomObj &&
           Array.from(roomObj).some((id) => {
             const s = io.sockets.sockets.get(id);
-            // Giả định: Người dùng bình thường không join 'admin-room'
             return !s?.rooms.has("admin-room");
           });
 
-        // Nếu không còn bất kỳ Guest nào (và không có Admin nào đang join phòng đó), xóa phòng
         if (!hasActiveUsers) {
           activeRooms.splice(i, 1);
-          delete messageHistory[room.id];
         }
       }
-
-      // Thông báo cho Admin-room danh sách phòng đã cập nhật
       io.to("admin-room").emit("active-rooms", activeRooms);
     });
   });

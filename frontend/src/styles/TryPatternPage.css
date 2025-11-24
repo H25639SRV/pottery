@@ -1,104 +1,463 @@
+/* --------------------------------- */
+/* 1. Thiết Kế Chung & Cải Tiến Màu Sắc */
+/* --------------------------------- */
+:root {
+  /* Tông màu chủ đạo: Xanh Lá - Đất */
+  --color-primary: #528b8b; /* Xanh ngọc trầm */
+  --color-secondary: #ff7f50; /* San hô (Dùng cho Custom Request) */
+  --color-success: #45a049; /* Xanh lá cho Upload */
+  --color-info: #007bff; /* Xanh dương cho Loading (spinner nếu có) */
+  --color-shadow-light: rgba(0, 0, 0, 0.08);
+
+  /* Màu gradient cho placeholder/loading */
+  --gradient-start: #e0f2f7; /* Rất nhạt xanh */
+  --gradient-end: #f0e6f2; /* Rất nhạt tím */
+  --border-dashed: #a0a0a0; /* Màu viền dashed */
+}
+
 .try-page {
+  padding: 40px 20px;
+  max-width: 2200px; /* TĂNG RẤT LỚN MAX-WIDTH CỦA TOÀN TRANG */
+  margin: 0 auto;
+  text-align: center;
+  background-color: #f8f8f8;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px var(--color-shadow-light);
+}
+
+.try-page h1 {
+  font-size: 2.8em;
+  color: #333;
+  margin-bottom: 40px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+/* Style cho các tiêu đề cột */
+.try-column h3 {
+  font-size: 1.3em;
+  color: #333;
+  margin-bottom: 20px;
+  font-weight: 600;
+  text-align: center;
+  width: 100%;
+  padding-left: 0;
+  position: relative;
+}
+
+/* Xóa ngôi sao */
+.try-column h3::before {
+  content: none;
+}
+
+.try-section {
+  display: flex;
+  flex-wrap: nowrap; /* Đảm bảo các cột nằm trên một hàng (trừ responsive) */
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 50px;
+  padding: 30px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 2px 10px var(--color-shadow-light);
+}
+
+.try-column {
+  flex: 2; /* Cột ảnh chiếm 2 phần linh hoạt */
+  min-width: 500px; /* TĂNG RẤT LỚN MIN-WIDTH CỦA CỘT ẢNH */
+  max-width: 700px; /* TĂNG RẤT LỚN MAX-WIDTH CỦA CỘT ẢNH */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 15px;
+  background-color: #fefefe;
+  border-radius: 8px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.actions-column {
+  flex: 1; /* Cột tùy chỉnh chỉ chiếm 1 phần linh hoạt */
+  min-width: 350px; /* Giảm min-width cột tùy chỉnh */
+  max-width: 450px; /* Giảm max-width cột tùy chỉnh */
+  justify-content: flex-start;
+  gap: 15px;
+}
+
+/* --------------------------------- */
+/* 2. Khu Vực Ảnh & Loading Overlay (TĂNG KÍCH THƯỚC VÀ BUỘC ẢNH PHÓNG TO) */
+/* --------------------------------- */
+
+.image-container {
+  position: relative;
+  width: 100%;
+  height: 850px; /* TĂNG CHIỀU CAO CỐ ĐỊNH RẤT LỚN */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  background-color: #f0f0f0;
+}
+
+/* Ảnh hiển thị bên trong image-container */
+.image-container img.result-image {
+  width: 100%; /* ĐẢM BẢO CHIỀU RỘNG BẰNG CONTAINER */
+  height: 100%; /* ĐẢM BẢO CHIỀU CAO BẰNG CONTAINER */
+  object-fit: contain; /* Vẫn giữ tỷ lệ, nhưng buộc phải phóng to nếu cần */
+  display: block;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Vùng placeholder và loading overlay (KHÍT HOÀN HẢO VỚI CONTAINER) */
+.placeholder-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0;
+  box-sizing: border-box;
+  background-color: transparent;
+}
+
+.placeholder-content {
+  width: 100%;
+  height: 100%;
+  border: 2px dashed var(--border-dashed);
+  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    var(--gradient-start) 0%,
+    var(--gradient-end) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
   text-align: center;
   padding: 20px;
 }
 
-.try-row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 40px;
-  margin-bottom: 30px;
-  flex-wrap: wrap;
+/* Style cho nội dung của placeholder */
+.placeholder-content .placeholder-icon {
+  font-size: 3em;
+  color: var(--border-dashed);
+  margin-bottom: 10px;
+}
+.placeholder-content .placeholder-text {
+  color: #777;
+  font-size: 1em;
+  font-weight: 500;
 }
 
-.col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* Loading overlay cụ thể (khi loading) */
+.loading-overlay .placeholder-content {
+  border-color: var(--color-info);
+  animation: placeholder-pulse 1.5s infinite alternate;
 }
 
-.actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
+/* Biểu tượng spinner */
+.spinner {
+  border: 5px solid rgba(255, 255, 255, 0.6);
+  border-top: 5px solid var(--color-info);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
 }
 
+/* Keyframes cho spinner */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Keyframes cho hiệu ứng nhấp nháy/pulse của placeholder/loading */
+@keyframes placeholder-pulse {
+  0% {
+    transform: scale(0.99);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* --------------------------------- */
+/* 3. Nút & Progress Bar */
+/* --------------------------------- */
+
+/* Custom file input */
 .custom-file-label {
   display: inline-block;
-  background: #d6e8d6;
-  border: 1px solid #9bbf9b;
-  border-radius: 8px;
-  padding: 8px 14px;
+  padding: 12px 25px;
+  background-color: var(--color-success);
+  color: white;
+  border-radius: 25px;
   cursor: pointer;
-  font-weight: 500;
-  margin-bottom: 10px;
-  transition: 0.2s;
+  font-weight: 600;
+  font-size: 1.1em;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+  margin-bottom: 15px;
 }
 
 .custom-file-label:hover {
-  background: #c3dfc3;
+  background-color: #45a049;
+  transform: translateY(-2px);
 }
 
-.progress-container {
-  width: 100%;
-  background: #eee;
-  border-radius: 8px;
+.selected-file-name {
+  font-size: 0.95em;
+  color: #666;
+  margin-bottom: 15px;
+  font-style: italic;
+  white-space: nowrap;
   overflow: hidden;
-  margin-top: 8px;
+  text-overflow: ellipsis;
+  max-width: 90%;
+}
+
+/* Render button */
+.render-button {
+  padding: 12px 30px;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.1em;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 4px 10px rgba(82, 139, 139, 0.5);
+  margin-top: 20px;
+}
+
+.render-button:hover:not(:disabled) {
+  background-color: #497e7e;
+  transform: translateY(-2px);
+}
+
+.render-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Progress bar */
+.progress-container {
+  width: 90%;
+  background-color: #e0e0e0;
+  border-radius: 10px;
+  margin-top: 15px;
+  height: 20px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 8px 3px rgba(40, 167, 69, 0.3);
+  animation: green-pulse 1.5s infinite alternate;
 }
 
 .progress-bar {
-  height: 8px;
-  background: #6cb76c;
-  transition: width 0.2s ease;
+  height: 100%;
+  background-color: #28a745;
+  width: 0%;
+  border-radius: 10px;
+  transition: width 0.3s ease;
 }
 
 .progress-text {
-  font-size: 12px;
-  text-align: center;
-  display: block;
-  margin-top: 2px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 0.9em;
+  font-weight: 700;
+  text-shadow: 1px 1px 2px #333;
 }
 
-.custom-file-upload {
-  display: inline-block;
-  padding: 10px 16px;
-  background-color: #4caf50;
-  color: white;
+@keyframes green-pulse {
+  0% {
+    box-shadow: 0 0 8px 3px rgba(40, 167, 69, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.6);
+  }
+}
+
+/* Custom Request Button (Dùng cho Tải về/Xóa) */
+.custom-request-button {
+  padding: 10px 20px;
+  background-color: #f0f0f0;
+  color: #666;
+  border: 1px solid #ddd;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 1em;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 
-.custom-file-upload:hover {
-  background-color: #43a047;
+.custom-request-button:hover:not(:disabled) {
+  background-color: #e8e8e8;
+  border-color: #ccc;
 }
 
-.custom-file-upload input[type="file"] {
-  display: none;
-}
-
-.actions button {
-  margin-top: 8px;
-  padding: 10px 16px;
-  border: none;
-  background-color: #2196f3;
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.actions button:hover:not(:disabled) {
-  background-color: #1976d2;
-}
-
-.actions button:disabled {
-  background-color: #9e9e9e;
+.custom-request-button:disabled {
+  background-color: #f8f8f8;
+  color: #aaaaaa;
   cursor: not-allowed;
+  box-shadow: none;
+  border-color: #eee;
+}
+
+/* Nút Gửi yêu cầu Custom nổi bật hơn */
+.custom-request-button.primary {
+  background-color: var(--color-secondary) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 10px rgba(255, 127, 80, 0.5) !important;
+}
+
+.custom-request-button.primary:hover:not(:disabled) {
+  background-color: #e67347 !important;
+}
+
+/* --------------------------------- */
+/* 4. Sticker Gallery */
+/* --------------------------------- */
+
+.sticker-separator {
+  font-size: 1.1em;
+  color: #888;
+  margin: 15px 0;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.sticker-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fcfcfc;
+  width: 100%;
+}
+
+.sticker-item {
+  width: 65px;
+  height: 65px;
+  cursor: pointer;
+  object-fit: contain;
+  border: 3px solid transparent;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  padding: 5px;
+  background-color: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.sticker-item.selected {
+  border-color: #ff7f50;
+  box-shadow: 0 0 0 4px rgba(255, 127, 80, 0.5);
+  transform: scale(1.1);
+}
+
+/* --------------------------------- */
+/* 5. Responsive adjustments */
+/* --------------------------------- */
+
+/* Đảm bảo bố cục vẫn hoạt động trên màn hình nhỏ hơn */
+@media (max-width: 1600px) {
+  .try-column {
+    min-width: 450px;
+    max-width: 650px;
+  }
+  .image-container {
+    height: 750px;
+  }
+}
+
+@media (max-width: 1400px) {
+  .try-column {
+    min-width: 400px;
+    max-width: 550px;
+  }
+  .image-container {
+    height: 650px;
+  }
+  .try-page {
+    max-width: 1400px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .try-column {
+    flex: 1; /* Cân bằng lại flex */
+    min-width: 350px;
+    max-width: 450px;
+  }
+  .actions-column {
+    min-width: 300px;
+    max-width: 400px;
+  }
+  .image-container {
+    height: 550px;
+  }
+  .try-section {
+    gap: 25px;
+    flex-wrap: wrap; /* Cho phép xuống dòng nếu cần */
+  }
+  .try-page {
+    max-width: 1200px;
+  }
+}
+
+@media (max-width: 992px) {
+  .try-section {
+    flex-direction: column;
+    align-items: center;
+  }
+  .try-column {
+    min-width: 90%;
+    max-width: 90%;
+  }
+  .actions-column {
+    min-width: 90%;
+    max-width: 90%;
+  }
+  .image-container {
+    height: 400px;
+  }
 }

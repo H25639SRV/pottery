@@ -6,7 +6,8 @@
     "outDir": "dist",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
+    "skipLibCheck": true, // <-- Quan trọng: Bỏ qua lỗi check type trong node_modules
+    "noImplicitAny": false,
     "types": ["node"]
   },
   "include": ["src"]

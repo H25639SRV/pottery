@@ -56,5 +56,5 @@ export interface CartContextType {
     quantity?: number
   ) => Promise<void>;
   clearCart: () => void;
-  removeFromCart: (userId: number, productId: number) => Promise<void>; // 🆕 thêm dòng này
+  removeFromCart: (userId: number, productId: number) => Promise<void>;
 }

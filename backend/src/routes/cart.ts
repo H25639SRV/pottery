@@ -8,7 +8,9 @@ import {
 
 const router = express.Router();
 
-router.get("/:userId", getCart);
+// 🔑 THAY ĐỔI QUAN TRỌNG: Dùng POST để lấy giỏ hàng (tránh lỗi route params)
+router.post("/get-cart", getCart);
+
 router.post("/add", addToCart);
 router.post("/remove", removeFromCart);
 router.post("/checkout", checkoutCart);

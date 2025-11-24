@@ -1,9 +1,11 @@
 import express from "express";
-import { getAllMessages, sendMessage } from "../controllers/chatController";
+import { getHistory, sendMessage } from "../controllers/chatController";
 
 const router = express.Router();
 
-router.get("/", getAllMessages);
-router.post("/", sendMessage);
+// ✅ Route lấy lịch sử phải có :roomId thì req.params.roomId mới hoạt động
+router.get("/history/:roomId", getHistory);
+
+router.post("/send", sendMessage);
 
 export default router;

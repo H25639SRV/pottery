@@ -1,373 +1,465 @@
 import React, { useEffect, useState } from "react";
-
 import axios from "axios";
-
 import { useNavigate } from "react-router-dom";
-
 import { FaImage, FaEdit, FaTrash } from "react-icons/fa";
-
+import { useAuth } from "../context/AuthContext";
 import "../styles/AdminProduct.css";
-
-// 🔑 KHAI BÁO BIẾN MÔI TRƯỜNG API URL
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-// ✅ Ép kiểu thủ công cho icon
-
 const IconImage = FaImage as unknown as React.FC;
-
 const IconEdit = FaEdit as unknown as React.FC;
-
 const IconTrash = FaTrash as unknown as React.FC;
 
-// ✅ Kiểu dữ liệu chuẩn Prisma
+interface Category {
+  id: number;
+  name: string;
+}
 
 interface Product {
   id: number;
-
   name: string;
-
   price: number;
-
   stock: number;
-
   description: string;
-
   image: string;
+  subImages?: string[];
+  sku?: string;
+  dimensions?: string;
+  weight?: string;
+  material?: string;
+  origin?: string;
+  availability?: string;
+  story?: string;
+  categoryId?: number | string | null;
+  category?: Category;
 }
 
 const AdminProductPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, isAdmin, isLoading } = useAuth();
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  const [newProduct, setNewProduct] = useState<Product>({
+  const [formData, setFormData] = useState<Product>({
     id: 0,
-
     name: "",
-
     price: 0,
-
     stock: 0,
-
     description: "",
-
     image: "",
+    subImages: [],
+    sku: "",
+    dimensions: "",
+    weight: "",
+    material: "",
+    origin: "",
+    availability: "Sẵn hàng",
+    story: "",
+    categoryId: "",
   });
 
-  const [editing, setEditing] = useState<Product | null>(null);
+  const [subImg1, setSubImg1] = useState("");
+  const [subImg2, setSubImg2] = useState("");
+  const [subImg3, setSubImg3] = useState("");
+  const [subImg4, setSubImg4] = useState("");
 
-  const token = localStorage.getItem("token");
-
-  const role = localStorage.getItem("role");
-
-  // ✅ Kiểm tra quyền admin
+  const [editing, setEditing] = useState<boolean>(false);
 
   useEffect(() => {
-    if (role?.toUpperCase() !== "ADMIN") {
-      alert("Bạn không có quyền truy cập trang này!");
-
-      navigate("/");
-    } else {
-      fetchProducts();
+    if (!isLoading) {
+      if (!user || !isAdmin) {
+        navigate("/");
+      } else {
+        fetchProducts();
+        fetchCategories();
+      }
     }
-
-    // Thêm dependency để xóa cảnh báo ESlint
-  }, [role, navigate]);
-
-  // ✅ Lấy danh sách sản phẩm
+  }, [user, isAdmin, isLoading, navigate]);
 
   const fetchProducts = async () => {
-    if (!API_URL) {
-      console.error("Lỗi: REACT_APP_API_URL chưa được cấu hình!");
-
-      return;
-    }
-
     try {
-      // 🔑 SỬ DỤNG API_URL
-
+      // ✅ Yêu cầu backend include cả category
       const res = await axios.get<Product[]>(`${API_URL}/api/products`);
-
-      console.log("📦 Dữ liệu sản phẩm:", res.data);
-
-      setProducts(res.data);
+      setProducts(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error("❌ Lỗi khi tải sản phẩm:", err);
+      console.error("Lỗi tải sản phẩm:", err);
     }
   };
 
-  // ✅ Thêm hoặc cập nhật sản phẩm
-
-  const handleAddOrUpdate = async () => {
-    if (!API_URL) {
-      alert("Lỗi cấu hình API. Vui lòng liên hệ quản trị viên.");
-
-      return;
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get<Category[]>(`${API_URL}/api/categories`);
+      setCategories(res.data);
+    } catch (err) {
+      console.error("Lỗi tải danh mục:", err);
     }
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "price" || name === "stock" ? Number(value) : value,
+    }));
+  };
+
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      categoryId: value === "" ? null : Number(value),
+    }));
+  };
+
+  const handleEditClick = (product: Product) => {
+    setEditing(true);
+    setFormData({
+      ...product,
+      categoryId: product.categoryId || null, // Đảm bảo không bị null
+    });
+    const subs = product.subImages || [];
+    setSubImg1(subs[0] || "");
+    setSubImg2(subs[1] || "");
+    setSubImg3(subs[2] || "");
+    setSubImg4(subs[3] || "");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const resetForm = () => {
+    setEditing(false);
+    setFormData({
+      id: 0,
+      name: "",
+      price: 0,
+      stock: 0,
+      description: "",
+      image: "",
+      subImages: [],
+      sku: "",
+      dimensions: "",
+      weight: "",
+      material: "",
+      origin: "",
+      availability: "Sẵn hàng",
+      story: "",
+      categoryId: null,
+    });
+    setSubImg1("");
+    setSubImg2("");
+    setSubImg3("");
+    setSubImg4("");
+  };
+
+  const handleSubmit = async () => {
+    const token = localStorage.getItem("token");
+    const subImages = [subImg1, subImg2, subImg3, subImg4].filter(
+      (img) => img.trim() !== ""
+    );
+
+    // Chuẩn bị payload
+    const payload = {
+      ...formData,
+      subImages,
+      // Đảm bảo categoryId là số hoặc null
+      categoryId: formData.categoryId === "" ? null : formData.categoryId,
+    };
 
     try {
       if (editing) {
-        // 🛠️ Đang chỉnh sửa → PUT
-
-        const updatedProduct = {
-          name: editing.name,
-
-          price: editing.price,
-
-          stock: editing.stock,
-
-          description: editing.description,
-
-          image: editing.image,
-        };
-
-        // 🔑 SỬ DỤNG API_URL
-
-        await axios.put(
-          `${API_URL}/api/products/${editing.id}`,
-          updatedProduct,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        alert("✅ Cập nhật sản phẩm thành công!");
-      } else {
-        // 🆕 Thêm mới → POST
-
-        const newProductData = {
-          name: newProduct.name,
-
-          price: newProduct.price,
-
-          stock: newProduct.stock,
-
-          description: newProduct.description,
-
-          image: newProduct.image,
-        };
-
-        // 🔑 SỬ DỤNG API_URL
-
-        await axios.post(`${API_URL}/api/products`, newProductData, {
+        await axios.put(`${API_URL}/api/products/${formData.id}`, payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
-        alert("✅ Thêm sản phẩm thành công!");
+        alert("✅ Cập nhật thành công!");
+      } else {
+        await axios.post(`${API_URL}/api/products`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        alert("✅ Thêm mới thành công!");
       }
-
-      // 🔁 Làm mới form và danh sách
-
-      setEditing(null);
-
-      setNewProduct({
-        id: 0,
-
-        name: "",
-
-        price: 0,
-
-        stock: 0,
-
-        description: "",
-
-        image: "",
-      });
-
-      await fetchProducts();
-    } catch (err) {
-      console.error("❌ Lỗi khi thêm/cập nhật sản phẩm:", err);
-    }
-  };
-
-  // ✅ Xóa sản phẩm
-
-  const handleDelete = async (id?: number) => {
-    console.log("🆔 ID nhận được:", id);
-
-    if (!id) return alert("❌ ID sản phẩm không hợp lệ!");
-
-    if (!API_URL) return alert("Lỗi cấu hình API.");
-
-    if (!window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) return;
-
-    try {
-      // 🔑 SỬ DỤNG API_URL
-
-      await axios.delete(`${API_URL}/api/products/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      alert("🗑️ Đã xóa sản phẩm!");
-
+      resetForm();
       fetchProducts();
     } catch (err) {
-      console.error("❌ Lỗi khi xóa sản phẩm:", err);
+      console.error(err);
+      alert("❌ Có lỗi xảy ra! Vui lòng kiểm tra các trường bắt buộc.");
     }
   };
 
-  // ✅ Chọn ảnh từ máy tính
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-
-      if (editing) {
-        setEditing({ ...editing, image: imageUrl });
-      } else {
-        setNewProduct({ ...newProduct, image: imageUrl });
-      }
+  const handleDelete = async (id: number) => {
+    if (
+      !window.confirm(
+        "Xóa sản phẩm này sẽ không thể hoàn tác. Bạn chắc chắn chứ?"
+      )
+    )
+      return;
+    try {
+      await axios.delete(`${API_URL}/api/products/${id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      alert("Đã xóa sản phẩm thành công!");
+      fetchProducts();
+    } catch (e) {
+      console.error(e);
+      alert("Lỗi xóa sản phẩm!");
     }
   };
+
+  if (isLoading) return <div className="p-10 text-center">Đang tải...</div>;
 
   return (
     <div className="admin-page">
-      <h2>🛒 Quản lý sản phẩm</h2>
+      <h2 className="admin-title">Quản lý sản phẩm</h2>
 
-      <div className="product-form">
-        <input
-          type="text"
-          placeholder="Tên sản phẩm"
-          value={editing ? editing.name : newProduct.name}
-          onChange={(e) =>
-            editing
-              ? setEditing({ ...editing, name: e.target.value })
-              : setNewProduct({ ...newProduct, name: e.target.value })
-          }
-        />
+      {/* --- PHẦN FORM NHẬP LIỆU --- */}
+      <div className="product-form-container">
+        <h3 className="form-title">
+          {editing ? "✏️ Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}
+        </h3>
 
-        <input
-          type="number"
-          placeholder="Giá sản phẩm (VNĐ)"
-          value={editing ? editing.price : newProduct.price}
-          onChange={(e) =>
-            editing
-              ? setEditing({ ...editing, price: Number(e.target.value) })
-              : setNewProduct({ ...newProduct, price: Number(e.target.value) })
-          }
-        />
+        <div className="form-grid">
+          <div className="form-column">
+            <label>Tên sản phẩm (*)</label>
+            <input
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Nhập tên..."
+            />
 
-        <input
-          type="number"
-          placeholder="Số lượng trong kho"
-          value={editing ? editing.stock : newProduct.stock}
-          onChange={(e) =>
-            editing
-              ? setEditing({ ...editing, stock: Number(e.target.value) })
-              : setNewProduct({ ...newProduct, stock: Number(e.target.value) })
-          }
-        />
+            <div className="row-2">
+              <div>
+                <label>Mã SP (SKU)</label>
+                <input
+                  name="sku"
+                  value={formData.sku || ""}
+                  onChange={handleChange}
+                  placeholder="MG-001"
+                />
+              </div>
+              <div>
+                <label>Tình trạng</label>
+                <select
+                  name="availability"
+                  value={formData.availability}
+                  onChange={handleChange}
+                >
+                  <option value="Sẵn hàng">Sẵn hàng</option>
+                  <option value="Hết hàng">Hết hàng</option>
+                  <option value="Đặt trước">Đặt trước</option>
+                </select>
+              </div>
+            </div>
 
-        <div className="image-upload">
-          <label htmlFor="imageInput" className="image-btn">
-            <IconImage /> Chọn ảnh
-          </label>
+            <div className="row-2">
+              <div>
+                <label>Giá (VNĐ)</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
+                />
+              </div>
+              <div>
+                <label>Tồn kho</label>
+                <input
+                  type="number"
+                  name="stock"
+                  value={formData.stock}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
 
-          <input
-            id="imageInput"
-            type="file"
-            accept="image/*"
-            style={{ display: "none" }}
-            onChange={handleImageUpload}
+            {/* DROPDOWN CHỌN DANH MỤC */}
+            <div style={{ marginTop: "15px" }}>
+              <label>Danh mục sản phẩm</label>
+              <select
+                name="categoryId"
+                value={formData.categoryId || ""}
+                onChange={handleCategoryChange} // ✅ Dùng hàm handleCategoryChange
+              >
+                <option value="">-- Không phân loại --</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              {categories.length === 0 && (
+                <small
+                  style={{ color: "red", display: "block", marginTop: "5px" }}
+                >
+                  Chưa có danh mục nào.
+                </small>
+              )}
+            </div>
+          </div>
+
+          <div className="form-column">
+            <label>Ảnh chính (URL) (*)</label>
+            <div className="input-with-icon">
+              <input
+                name="image"
+                value={formData.image}
+                onChange={handleChange}
+                placeholder="/public/images/abc.jpg"
+              />
+              <label className="icon-label">
+                <IconImage />
+              </label>
+            </div>
+
+            <label>Ảnh phụ (Gallery)</label>
+            <div className="sub-images-grid">
+              <input
+                placeholder="Ảnh phụ 1"
+                value={subImg1}
+                onChange={(e) => setSubImg1(e.target.value)}
+              />
+              <input
+                placeholder="Ảnh phụ 2"
+                value={subImg2}
+                onChange={(e) => setSubImg2(e.target.value)}
+              />
+              <input
+                placeholder="Ảnh phụ 3"
+                value={subImg3}
+                onChange={(e) => setSubImg3(e.target.value)}
+              />
+              <input
+                placeholder="Ảnh phụ 4"
+                value={subImg4}
+                onChange={(e) => setSubImg4(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Thông số & Nội dung */}
+        <div className="specs-section">
+          <h4>🛠️ Thông số kỹ thuật</h4>
+          <div className="specs-grid">
+            <input
+              name="dimensions"
+              value={formData.dimensions || ""}
+              onChange={handleChange}
+              placeholder="Kích thước"
+            />
+            <input
+              name="weight"
+              value={formData.weight || ""}
+              onChange={handleChange}
+              placeholder="Trọng lượng"
+            />
+            <input
+              name="material"
+              value={formData.material || ""}
+              onChange={handleChange}
+              placeholder="Chất liệu"
+            />
+            <input
+              name="origin"
+              value={formData.origin || ""}
+              onChange={handleChange}
+              placeholder="Xuất xứ"
+            />
+          </div>
+        </div>
+
+        <div className="content-section">
+          <label>Mô tả ngắn</label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            rows={2}
           />
-
-          <input
-            className="image-input"
-            type="text"
-            placeholder="URL ảnh hoặc chọn từ máy"
-            value={editing ? editing.image : newProduct.image}
-            onChange={(e) =>
-              editing
-                ? setEditing({ ...editing, image: e.target.value })
-                : setNewProduct({ ...newProduct, image: e.target.value })
-            }
+          <label>Câu chuyện sản phẩm</label>
+          <textarea
+            name="story"
+            value={formData.story || ""}
+            onChange={handleChange}
+            rows={4}
           />
         </div>
 
-        {(editing?.image || newProduct.image) && (
-          <div className="image-preview">
-            <img
-              src={editing ? editing.image : newProduct.image}
-              alt="Preview"
-              className="preview-img"
-            />
-          </div>
-        )}
-
-        <textarea
-          placeholder="Mô tả chi tiết sản phẩm..."
-          value={editing ? editing.description : newProduct.description}
-          onChange={(e) =>
-            editing
-              ? setEditing({ ...editing, description: e.target.value })
-              : setNewProduct({ ...newProduct, description: e.target.value })
-          }
-        />
-
         <div className="form-buttons">
-          <button className="add-btn" onClick={handleAddOrUpdate}>
-            {editing ? "💾 Cập nhật" : "➕ Thêm sản phẩm"}
+          <button className="save-btn" onClick={handleSubmit}>
+            {editing ? "Lưu thay đổi" : "Thêm mới"}
           </button>
-
           {editing && (
-            <button className="cancel-btn" onClick={() => setEditing(null)}>
-              ❌ Hủy
+            <button className="cancel-btn" onClick={resetForm}>
+              Hủy bỏ
             </button>
           )}
         </div>
       </div>
 
-      <table className="product-table">
-        <thead>
-          <tr>
-            <th>Tên</th>
+      {/* --- PHẦN DANH SÁCH SẢN PHẨM (ĐÃ CHỈNH SỬA) --- */}
+      <div className="product-list-section">
+        <div className="product-list"></div>
+        {/* TIÊU ĐỀ - NẰM TRÊN CÙNG */}
+        <div className="list-header-wrapper">
+          <h3>📋 Danh sách sản phẩm ({products.length})</h3>
+        </div>
 
-            <th>Giá</th>
-
-            <th>Số lượng</th>
-
-            <th>Mô tả</th>
-
-            <th>Ảnh</th>
-
-            <th>Hành động</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {products.map((p) => (
-            <tr key={p.id}>
-              <td>{p.name}</td>
-
-              <td>{p.price}</td>
-
-              <td>{p.stock}</td>
-
-              <td>{p.description}</td>
-
-              <td>
-                <img src={p.image} alt={p.name} width="80" />
-              </td>
-
-              <td className="action-buttons">
-                <button className="edit-btn" onClick={() => setEditing(p)}>
-                  <IconEdit />
-                </button>
-
-                <button
-                  className="delete-btn"
-                  onClick={() => handleDelete(p.id)}
-                >
-                  <IconTrash />
-                </button>
-              </td>
+        {/* BẢNG - NẰM DƯỚI TIÊU ĐỀ */}
+        <table className="product-table">
+          <thead>
+            <tr>
+              <th>Ảnh</th>
+              <th>Tên & SKU</th>
+              <th>Danh mục</th>
+              <th>Giá & Kho</th>
+              <th>Hành động</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {products.map((p) => (
+              <tr key={p.id}>
+                <td>
+                  <img src={p.image} alt={p.name} className="table-img" />
+                </td>
+                <td>
+                  <strong>{p.name}</strong>
+                  <br />
+                  <small className="sku-text">{p.sku || "---"}</small>
+                </td>
+                <td>
+                  <span className="category-badge">
+                    {p.category?.name || "Chưa phân loại"}
+                  </span>
+                </td>
+                <td>
+                  {p.price.toLocaleString()} đ
+                  <br />
+                  <small>Kho: {p.stock}</small>
+                </td>
+                <td className="action-buttons">
+                  <button
+                    className="edit-btn"
+                    onClick={() => handleEditClick(p)}
+                  >
+                    <IconEdit />
+                  </button>
+                  <button
+                    className="delete-btn"
+                    onClick={() => handleDelete(p.id)}
+                  >
+                    <IconTrash />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

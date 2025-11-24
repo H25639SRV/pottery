@@ -1,11 +1,13 @@
 .footer {
-  background: #111; /* nền đen */
+  /* MÀU CHỦ ĐẠO MỚI: Xanh rêu/Nâu đất (#5d6939) */
+  background: #5d6939;
   color: #fff; /* chữ trắng */
   padding: 40px 60px;
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  /* Thêm 1 cột (1fr) cho Mạng xã hội */
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   gap: 40px;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Times New Roman", Times, serif;
   position: relative;
 }
 
@@ -31,14 +33,15 @@
   display: block;
   width: 40px;
   height: 2px;
-  background: #e63946; /* màu nhấn */
+  /* MÀU NHẤN MỚI: Màu kem sáng (#f7f0e8) */
+  background: #f7f0e8;
   margin-top: 5px;
 }
 
 .footer-contact p {
   margin: 6px 0;
   font-size: 0.95rem;
-  color: #ccc;
+  color: #e0e0e0; /* Sáng hơn một chút */
 }
 
 /* Các cột menu */
@@ -58,14 +61,33 @@
 
 .footer-links a {
   text-decoration: none;
-  color: #bbb;
+  color: #d0d0d0; /* Hợp với nền xanh rêu */
   margin: 6px 0;
   font-size: 0.95rem;
   transition: color 0.3s ease;
 }
 
 .footer-links a:hover {
-  color: #e63946; /* đỏ nhấn khi hover */
+  /* Màu hover: Sáng lên màu kem */
+  color: #f7f0e8;
+}
+
+/* Style cho Mạng xã hội */
+.footer-social .social-icons {
+  display: flex;
+  gap: 15px;
+  margin-top: 5px;
+}
+
+.footer-social .social-icon {
+  font-size: 1.5rem;
+  color: #d0d0d0;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.footer-social .social-icon:hover {
+  color: #f7f0e8;
+  transform: scale(1.1);
 }
 
 /* Footer bottom */
@@ -73,19 +95,41 @@
   grid-column: 1 / -1;
   text-align: center;
   padding-top: 20px;
-  border-top: 1px solid #333;
+  /* Border line mới */
+  border-top: 1px solid #7c885c;
   font-size: 0.9rem;
-  color: #aaa;
+  color: #ccc;
 }
 
 /* Responsive */
-@media (max-width: 992px) {
+@media (max-width: 1200px) {
+  /* Chuyển sang 3 cột khi màn hình hẹp */
   .footer {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+  .footer-social {
+    grid-column: 2 / 3; /* Đặt cột social bên dưới Footer-top */
+    margin-top: 20px;
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
+  .footer {
+    grid-template-columns: 1fr 1fr;
+    padding: 30px 40px;
+  }
+  /* Đặt cột social thành hàng ngang mới */
+  .footer-social {
+    grid-column: 1 / -1;
+    align-items: center;
+    margin-top: 0;
+  }
+  .footer-social .social-icons {
+    margin-top: 10px;
+  }
+}
+
+@media (max-width: 480px) {
   .footer {
     grid-template-columns: 1fr;
     text-align: center;
@@ -95,5 +139,13 @@
   .footer-links h4::after {
     margin-left: auto;
     margin-right: auto;
+  }
+
+  .footer-social {
+    /* Đảm bảo icon vẫn căn giữa */
+    align-items: center;
+  }
+  .footer-social .social-icons {
+    justify-content: center;
   }
 }

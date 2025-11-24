@@ -1,120 +1,182 @@
-import React, { useEffect, useState } from "react";
-
+// src/pages/Product.tsx
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-
 import { useAuth } from "../context/AuthContext";
-
-import { useLocation } from "react-router-dom";
-
+import { useCart } from "../context/CartContext";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/Product.css";
-
-// 🔑 KHAI BÁO BIẾN MÔI TRƯỜNG API URL
 
 const API_URL = process.env.REACT_APP_API_URL || "";
 
 interface Product {
   id: number;
-
   name: string;
-
   price: number;
-
   image: string;
+  category_id?: number;
+  story?: string;
 }
 
 const Product: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-
-  const [filtered, setFiltered] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const { user } = useAuth();
-
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
   const userId = user?.id;
 
   const location = useLocation();
-
   const queryParams = new URLSearchParams(location.search);
 
-  const searchTerm = queryParams.get("query")?.toLowerCase() || "";
+  // Lấy các tham số từ URL
+  const searchTerm = queryParams.get("query") || "";
+  const categoryId = queryParams.get("category") || "";
+  const sortBy = queryParams.get("sort") || ""; // 'category', 'relevance', 'all'
 
+  // --- HÀM TẢI DỮ LIỆU TỪ BACKEND DỰA TRÊN URL ---
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setProducts([]); // Xóa dữ liệu cũ khi bắt đầu tải mới
+
+    // Xây dựng URL API dựa trên các tham số
+    const apiUrl = new URL(`${API_URL}/api/products`);
+
+    if (searchTerm) {
+      apiUrl.searchParams.append("query", searchTerm);
+    }
+    if (categoryId) {
+      apiUrl.searchParams.append("category", categoryId);
+    }
+    if (sortBy) {
+      // Dùng tham số sort để backend xử lý sắp xếp (ví dụ: theo category, theo tìm kiếm)
+      apiUrl.searchParams.append("sort", sortBy);
+    }
+
+    try {
+      // 🚨 Backend của bạn cần được thiết lập để đọc các tham số query, category, sort này.
+      const res = await axios.get<Product[]>(apiUrl.toString());
+
+      if (Array.isArray(res.data)) {
+        const formattedData = res.data.map((p) => ({
+          ...p,
+          category_id: p.category_id || undefined,
+          story: p.story || "Đang cập nhật...",
+        }));
+        setProducts(formattedData);
+      } else {
+        console.error("❌ API không trả về mảng dữ liệu hợp lệ.");
+        setProducts([]);
+      }
+    } catch (err) {
+      console.error("❌ Lỗi tải danh sách sản phẩm:", err);
+      setError(
+        "Không thể tải danh sách sản phẩm. Vui lòng kiểm tra kết nối API."
+      );
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchTerm, categoryId, sortBy]); // Chạy lại khi URL thay đổi
+
+  // --- EFFECT CHÍNH: TẢI SẢN PHẨM MỖI KHI URL THAY ĐỔI ---
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]); // Dependency là hàm fetchProducts (đã được useCallback bọc)
 
-  useEffect(() => {
-    if (searchTerm) {
-      const results = products.filter((p) =>
-        p.name.toLowerCase().includes(searchTerm)
-      );
-
-      setFiltered(results);
-    } else {
-      setFiltered(products);
-    }
-  }, [searchTerm, products]);
-
-  const fetchProducts = async () => {
-    try {
-      // ✅ Sửa lỗi đường dẫn: Dùng API_URL
-
-      const res = await axios.get<Product[]>(`${API_URL}/api/products`);
-
-      setProducts(res.data);
-    } catch (err) {
-      console.error("❌ Lỗi tải sản phẩm:", err);
-    }
-  };
-
-  const addToCart = async (productId: number) => {
+  const handleAddToCart = async (productId: number, productName: string) => {
     if (!userId) {
-      if (
-        window.confirm(
-          "Bạn cần đăng nhập để thêm vào giỏ hàng. Đăng nhập ngay?"
-        )
-      ) {
-        window.location.href = "/login";
-      }
-
+      alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+      navigate("/login");
       return;
     }
 
     try {
-      // ✅ Sửa lỗi đường dẫn: Dùng API_URL
+      await addToCart(userId, productId, 1);
+      const confirm = window.confirm(
+        `🛒 Đã thêm sản phẩm "${productName}" vào giỏ hàng thành công! \n\nBạn có muốn chuyển đến Giỏ hàng không?`
+      );
 
-      await axios.post(`${API_URL}/api/cart/add`, {
-        userId,
-
-        productId,
-
-        quantity: 1,
-      });
-
-      alert("🛒 Đã thêm vào giỏ hàng!");
-
-      if (
-        window.confirm("Đã thêm vào giỏ hàng, bạn muốn vào giỏ hàng xem không?")
-      ) {
-        window.location.href = "/cart";
+      if (confirm) {
+        navigate("/cart");
       }
     } catch (err) {
-      console.error("❌ Lỗi thêm giỏ hàng:", err);
-
-      alert("Không thể thêm sản phẩm vào giỏ hàng!");
+      alert("Lỗi thêm vào giỏ hàng. Vui lòng thử lại.");
     }
   };
 
-  return (
-    <div className="product-page">
-      <h1 className="product-title">
-        {searchTerm
-          ? `Kết quả tìm kiếm cho: "${searchTerm}"`
-          : "Bộ sưu tập sản phẩm"}
-      </h1>
+  const getPageTitle = () => {
+    if (searchTerm) {
+      return `Kết quả tìm kiếm`;
+    }
 
+    // Logic này chỉ dùng để hiển thị tiêu đề, không dùng để lọc nữa
+    switch (categoryId) {
+      case "1":
+        return "Dáng Việt";
+      case "2":
+        return "Âm vang di sản";
+      default:
+        return "Bộ sưu tập";
+    }
+  };
+
+  const getSubtitle = () => {
+    if (searchTerm) {
+      return `Kết quả tìm kiếm cho: "${searchTerm}"`;
+    }
+    if (categoryId) {
+      return `Các sản phẩm thuộc danh mục: ${getPageTitle()}`;
+    }
+    return "Các sản phẩm nổi bật";
+  };
+
+  const handleProductClick = (productId: number) => {
+    navigate(`/product/detail/${productId}`);
+  };
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div style={{ textAlign: "center", width: "100%", padding: "40px" }}>
+          <p>Đang tải dữ liệu sản phẩm...</p>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div
+          style={{
+            textAlign: "center",
+            width: "100%",
+            padding: "40px",
+            color: "red",
+          }}
+        >
+          <p>⚠️ Lỗi: {error}</p>
+        </div>
+      );
+    }
+
+    if (products.length === 0) {
+      return (
+        <div style={{ textAlign: "center", width: "100%", padding: "40px" }}>
+          <p>Không tìm thấy sản phẩm nào phù hợp với yêu cầu.</p>
+        </div>
+      );
+    }
+
+    return (
       <div className="product-grid">
-        {filtered.length > 0 ? (
-          filtered.map((product) => (
-            <div className="product-card" key={product.id}>
+        {products.map((product) => (
+          <div className="product-card" key={product.id}>
+            <div
+              onClick={() => handleProductClick(product.id)}
+              style={{ cursor: "pointer" }}
+            >
               <img
                 src={product.image}
                 alt={product.name}
@@ -126,23 +188,37 @@ const Product: React.FC = () => {
               <p className="product-price">
                 {product.price.toLocaleString()} VND
               </p>
-
-              <button
-                onClick={() => addToCart(product.id)}
-                className="add-to-cart"
-              >
-                Thêm vào giỏ
-              </button>
             </div>
-          ))
-        ) : (
-          <p>Không tìm thấy sản phẩm phù hợp.</p>
-        )}
+
+            <button
+              onClick={() => handleAddToCart(product.id, product.name)}
+              className="add-to-cart"
+            >
+              Thêm vào giỏ
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="product-page">
+      {/* Banner */}
+      <div className="product-banner-wrapper">
+        <img
+          src="/image/potterybackground2.png"
+          alt="Banner Gốm Việt"
+          className="product-banner-image"
+        />
+        <div className="product-banner-overlay">
+          <h1 className="product-banner-title">{getPageTitle()}</h1>
+        </div>
       </div>
 
-      {searchTerm && filtered.length === 0 && (
-        <p>Không tìm thấy sản phẩm nào khớp với tìm kiếm.</p>
-      )}
+      <h1 className="product-title-detail">{getSubtitle()}</h1>
+
+      {renderContent()}
     </div>
   );
 };

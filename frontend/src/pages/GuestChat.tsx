@@ -54,11 +54,11 @@ const GuestChat: React.FC = () => {
 
     socket.emit("chat-message", msg);
 
-    // ❌ Không thêm ngay, chờ server emit lại
+    // 🎯 FIX: Thêm ngay tin nhắn vào danh sách để phản hồi tức thì
+    setMessages((prev) => [...prev, msg]);
 
     setInput("");
   };
-
   return (
     <div className="chat-container guest-theme">
       <h3 className="chat-header">Khách hàng 💚 Mộc Gốm</h3>
@@ -88,7 +88,9 @@ const GuestChat: React.FC = () => {
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
 
-        <button onClick={sendMessage}>Gửi</button>
+        <button onClick={sendMessage} disabled={!roomId}>
+          Gửi
+        </button>
       </div>
     </div>
   );

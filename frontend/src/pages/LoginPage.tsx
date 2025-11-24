@@ -1,59 +1,90 @@
-// src/pages/LoginPage.tsx
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "framer-motion"; // 👈 Thêm framer-motion
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import "../styles/Auth.css";
-import { getApiUrl } from "../config/apiConfig";
+import { useAuth } from "../context/AuthContext"; // 👈 Thêm AuthContext
+import "../styles/Auth.css"; // 👈 Sử dụng Auth.css
 
-// Khai báo biến môi trường API
-const API_URL = process.env.REACT_APP_API_URL;
+// 🔑 KHAI BÁO BIẾN MÔI TRƯỜNG API URL
+const API_URL = process.env.REACT_APP_API_URL || "";
 
 const LoginPage: React.FC = () => {
+  // --- STATE ---
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+
+  // --- CONTEXT & ROUTING ---
+  const { login, logout, user } = useAuth();
   const navigate = useNavigate();
 
+  // --- HANDLER ---
   const handleLogin = async () => {
     if (!email || !password) {
       alert("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
 
-    if (!API_URL) {
-      console.error("Lỗi: REACT_APP_API_URL chưa được cấu hình!");
-      alert("Lỗi cấu hình API. Vui lòng liên hệ quản trị viên.");
-      return;
-    }
-
     try {
       setLoading(true);
-      const res = await fetch(getApiUrl("/api/auth/login"), {
+
+      // ✅ Đổi endpoint thành /api/auth/login
+      const res = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email,
+          password,
+        }),
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
-        alert(data.message || "Đăng nhập thất bại!");
-        return;
-      }
+      if (res.ok) {
+        // ✅ Gọi hàm login từ AuthContext
+        login(data.token, data.user);
 
-      login({ token: data.token, user: data.user });
-      alert(`Xin chào ${data.user.username}!`);
-      navigate("/");
+        alert("Đăng nhập thành công!");
+        navigate("/"); // Chuyển hướng về trang chủ
+      } else {
+        alert(
+          data.message ||
+            "Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu!"
+        );
+      }
     } catch (err) {
-      console.error("❌ Lỗi đăng nhập:", err);
-      alert("Đã xảy ra lỗi, vui lòng thử lại!");
+      console.error("Lỗi đăng nhập:", err);
+      alert("Đã xảy ra lỗi kết nối, vui lòng thử lại!");
     } finally {
       setLoading(false);
     }
   };
 
+  // --- TRƯỜNG HỢP ĐÃ ĐĂNG NHẬP (Giữ lại logic cũ) ---
+  if (user) {
+    return (
+      <div
+        className="auth-page"
+        style={{ padding: "50px", textAlign: "center" }}
+      >
+        <h2 className="auth-title">Bạn đã đăng nhập</h2>
+        <p>
+          Xin chào, <strong>{user.username}</strong> ({user.email})
+        </p>
+        <button
+          onClick={() => {
+            logout();
+            navigate("/login");
+          }}
+          className="auth-btn"
+          style={{ width: "200px", marginTop: "15px" }}
+        >
+          Đăng xuất
+        </button>
+      </div>
+    );
+  }
+
+  // --- GIAO DIỆN CHÍNH ---
   return (
     <motion.div
       className="fade-page"
@@ -73,15 +104,19 @@ const LoginPage: React.FC = () => {
         }}
       >
         <div className="overlay"></div>
+
         <div className="auth-container">
           <h2 className="auth-title">Đăng nhập</h2>
 
+          {/* Input Email */}
           <input
             type="email"
             placeholder="Địa chỉ email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+
+          {/* Input Mật khẩu */}
           <input
             type="password"
             placeholder="Mật khẩu"

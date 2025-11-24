@@ -91,7 +91,9 @@ const AdminChat: React.FC = () => {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
-        <button onClick={sendMessage}>Gửi</button>
+        <button onClick={sendMessage} disabled={!roomId}>
+          Gửi
+        </button>
       </div>
     </div>
   );

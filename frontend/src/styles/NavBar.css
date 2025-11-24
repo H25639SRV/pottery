@@ -33,11 +33,15 @@
 
 /* --- logo --- */
 .navbar-logo {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #fffaf0;
+  /* Loại bỏ các thuộc tính text cũ và thay bằng flex để chứa ảnh */
+  display: flex;
+  align-items: center;
   text-decoration: none;
-  letter-spacing: 1px;
+}
+
+.logo-image {
+  height: 48px; /* Điều chỉnh chiều cao của logo */
+  width: auto; /* Giữ tỷ lệ khung hình */
 }
 
 /* --- links --- */
@@ -99,27 +103,6 @@
   color: #e2d1c3;
 }
 
-.search-btn {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-left: 5px;
-  transition: transform 0.2s ease, color 0.2s ease;
-}
-
-.search-btn:hover {
-  transform: scale(1.1);
-  color: #ffd5aa;
-}
-
-.search-box input::placeholder {
-  color: #e2d1c3;
-}
-
 /* --- icon tìm kiếm --- */
 .search-box button {
   background: none;
@@ -129,7 +112,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-left: 6px; /* dịch sang trái nhẹ */
+  padding-left: 6px;
 }
 
 .search-box button .icon {
@@ -169,7 +152,7 @@
   letter-spacing: 0.3px;
 }
 
-.greeting strong {
+.greeting b {
   color: #ffebcd;
 }
 
@@ -199,14 +182,13 @@
   font-size: 14px;
 }
 
-/* Nút “Chỉnh sửa sản phẩm” & “Đăng xuất” */
-/* --- dropdown items --- */
+/* --- DROPDOWN ITEMS (Đã đồng bộ) --- */
+
 .dropdown-item {
-  display: flex;
+  /* Đặt padding và background-color chung */
+  display: block;
   width: 100%;
-  background-color: #5b3a29;
   color: #fff;
-  padding: 10px 0px 10px 0px;
   text-decoration: none;
   border: none;
   border-radius: 6px;
@@ -214,16 +196,21 @@
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.25s ease, transform 0.1s ease;
+  transition: background-color 0.25s ease;
   margin-bottom: 6px;
   box-sizing: border-box;
+
+  /* 💥 Padding chuẩn */
+  padding: 8px 12px;
+  background-color: transparent;
 }
+
+/* Style cho Button bên trong .dropdown-item (ví dụ: nút Đăng xuất) */
 .dropdown-button {
   display: block;
   width: 100%;
-  background-color: #5b3a29;
+  background-color: transparent;
   color: #fff;
-  padding: 10px 10px 10px 10px;
   text-decoration: none;
   border: none;
   border-radius: 6px;
@@ -231,12 +218,47 @@
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.25s ease, transform 0.1s ease;
+  transition: background-color 0.25s ease;
   box-sizing: border-box;
+
+  /* 💥 Padding chuẩn */
+  padding: 8px 12px;
 }
-.dropdown-item:hover {
-  background-color: #5b3a29;
-  transform: scale(1.02);
+
+/* Áp dụng hiệu ứng hover đồng nhất cho cả hai dropdown */
+.dropdown-item:hover,
+.dropdown-button:hover {
+  background-color: #7b573d; /* Màu nâu sáng hơn khi hover */
+  color: #ffddaa;
+  transform: none; /* Bỏ hiệu ứng scale cũ */
+}
+
+/* Đảm bảo Link bên trong dropdown-item được đồng bộ */
+.dropdown-item a {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+  width: 100%;
+}
+
+/* --- CÁC STYLE RIÊNG CHO MENU SẢN PHẨM --- */
+
+.product-dropdown-trigger {
+  position: relative;
+}
+
+.navbar-link-base {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+
+/* Khung menu Sản phẩm */
+.product-menu {
+  left: 50%;
+  transform: translateX(-50%); /* Căn giữa theo vị trí cha */
+  min-width: 200px;
+  padding: 8px;
 }
 
 /* 🛒 Badge hiển thị số lượng sản phẩm */
@@ -251,15 +273,15 @@
   right: -8px;
   background-color: #d93025;
   color: white;
-  border-radius: 50%; /* ✅ hình tròn hoàn toàn */
-  width: 22px; /* ✅ tăng kích thước */
+  border-radius: 50%;
+  width: 22px;
   height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
   font-weight: bold;
-  border: 2px solid white; /* giúp badge nổi bật hơn */
+  border: 2px solid white;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
 }
 
@@ -291,21 +313,7 @@
 .search-suggestions li:hover {
   background: #f1e1d1;
 }
-.navbar-logo {
-  /* Loại bỏ các thuộc tính text cũ và thay bằng flex để chứa ảnh */
-  display: flex;
-  align-items: center;
-  /* Giữ các thuộc tính chung nếu muốn Link có hiệu ứng hover hoặc padding */
-  text-decoration: none;
-}
 
-/* 🖼️ CSS DÀNH CHO ẢNH LOGO ĐƯỢC THÊM VÀO ĐÂY */
-.logo-image {
-  height: 48px; /* Điều chỉnh chiều cao của logo */
-  width: auto; /* Giữ tỷ lệ khung hình */
-  /* margin-right: 10px; Tùy chọn, nếu bạn muốn có khoảng trống giữa logo và nội dung khác */
-}
-/* 🖼️ KẾT THÚC PHẦN CSS CHO ẢNH LOGO */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -315,4 +323,47 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+/* ======================================= */
+/* === GHI ĐÈ STYLE ĐỂ ĐỒNG BỘ DROPDOWN === */
+/* ======================================= */
+
+/* Đảm bảo Link bên trong dropdown-item được reset style mặc định */
+.dropdown-menu .dropdown-item a {
+  color: inherit !important;
+  text-decoration: none !important;
+  display: block !important;
+  padding: 0 !important; /* Loại bỏ padding tiềm ẩn của Link */
+}
+
+/* Đồng bộ padding và màu nền cho cả Link/Button trong mọi dropdown */
+.dropdown-menu .dropdown-item,
+.dropdown-menu .dropdown-button {
+  /* Đảm bảo padding mới được áp dụng và đồng nhất */
+  padding: 8px 12px !important;
+  background-color: transparent !important;
+  text-align: left !important;
+  margin-bottom: 6px !important;
+  font-size: 0.95rem !important; /* Đồng bộ kích thước font */
+
+  /* Reset transform */
+  transform: none !important;
+}
+
+/* Ghi đè hiệu ứng hover */
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-button:hover {
+  background-color: #7b573d !important;
+  color: #ffddaa !important;
+  transform: none !important;
+}
+
+/* Nếu bạn dùng Link bên trong button, cần reset cả button */
+.dropdown-menu .dropdown-item button {
+  background-color: transparent !important;
+  border: none !important;
+  width: 100% !important;
+  padding: 0 !important; /* Đặt padding lên cấp cha (.dropdown-item) */
+  text-align: left !important;
+  color: inherit !important;
 }

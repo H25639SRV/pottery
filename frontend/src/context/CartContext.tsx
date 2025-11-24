@@ -1,10 +1,7 @@
-import React, { createContext, useContext, useState } from "react";
-
+// H:\code\hoc\docker\pottery\frontend\src\context\CartContext.tsx
+import React, { createContext, useContext, useState, useCallback } from "react";
 import axios from "axios";
-
 import { CartContextType, CartItem } from "../types";
-
-// 🔑 KHAI BÁO BIẾN MÔI TRƯỜNG API URL
 
 const API_URL = process.env.REACT_APP_API_URL || "";
 
@@ -15,61 +12,52 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  const fetchCart = async (userId: number) => {
+  // Dùng useCallback để tránh lặp vô hạn
+  const fetchCart = useCallback(async (userId: number) => {
     try {
-      // ✅ Sửa lỗi đường dẫn: Dùng API_URL
-
-      const res = await axios.get<{ items: CartItem[] }>(
-        `${API_URL}/api/cart/${userId}`
+      const res = await axios.post<{ items: CartItem[] }>(
+        `${API_URL}/api/cart/get-cart`,
+        { userId }
       );
-
       setCart(res.data.items || []);
     } catch (err) {
-      console.error("❌ Lỗi khi tải giỏ hàng:", err);
-
-      setCart([]);
+      console.error(
+        "⚠️ Không thể lấy giỏ hàng (User có thể chưa có giỏ):",
+        err
+      );
+      // Không reset cart về rỗng ở đây để tránh nhấp nháy UI nếu lỗi mạng tạm thời
     }
-  };
+  }, []);
 
   const addToCart = async (
     userId: number,
-
     productId: number,
-
     quantity: number = 1
   ) => {
     try {
-      // ✅ Sửa lỗi đường dẫn: Dùng API_URL
-
       await axios.post(`${API_URL}/api/cart/add`, {
         userId,
-
         productId,
-
         quantity,
       });
-
       await fetchCart(userId);
     } catch (err) {
       console.error("❌ Lỗi thêm vào giỏ hàng:", err);
+      // 🔑 QUAN TRỌNG: Ném lỗi ra để trang Product biết là thất bại
+      throw err;
     }
   };
 
-  // 🆕 Xóa sản phẩm khỏi giỏ hàng
-
   const removeFromCart = async (userId: number, productId: number) => {
     try {
-      // ✅ Sửa lỗi đường dẫn: Dùng API_URL
-
       await axios.post(`${API_URL}/api/cart/remove`, {
         userId,
-
         productId,
       });
-
       await fetchCart(userId);
     } catch (err) {
-      console.error("❌ Lỗi khi xóa sản phẩm khỏi giỏ:", err);
+      console.error("❌ Lỗi khi xóa sản phẩm:", err);
+      throw err;
     }
   };
 
@@ -86,8 +74,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export const useCart = () => {
   const context = useContext(CartContext);
-
   if (!context) throw new Error("useCart must be used within a CartProvider");
-
   return context;
 };

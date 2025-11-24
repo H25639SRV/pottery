@@ -1,15 +1,98 @@
 .privacy-page {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 50px 20px;
   background-color: #fff;
   color: #333;
   line-height: 1.8;
+  font-family: "Times New Roman", Times, serif;
 }
 
-.privacy-page h1 {
-  text-align: center;
+.privacy-page h1,
+.privacy-page h2 {
+  text-align: left;
   font-size: 2rem;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   color: #222;
+  font-weight: bold;
+}
+
+.privacy-page h2 {
+  font-size: 1.8rem;
+}
+
+.privacy-page p {
+  margin-bottom: 1em;
+}
+
+.privacy-page .headline {
+  font-size: 1.1em;
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* Bố cục 2 cột cho các sections */
+.section {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 50px;
+  align-items: flex-start;
+}
+
+/* Kích thước và kiểu cho vùng chứa ảnh */
+.image-container {
+  flex: 0 0 50%;
+  max-width: 50%;
+  /* Đảm bảo hình ảnh là hình vuông */
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 5px;
+}
+
+/* Kiểu cho thẻ ảnh thực tế */
+.section-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* --- Cấu hình Bố cục theo yêu cầu --- */
+
+/* Phần 1: Về chúng tôi (About Us) - Ảnh trái, Text phải (Mặc định) */
+.about-us-section {
+  flex-direction: row;
+}
+
+/* Phần 2: Nguồn cảm hứng (Inspiration) - Đảo vị trí: Text trái, Ảnh phải */
+/* Để đạt được "Text qua trái và Ảnh qua phải" ta dùng flex-direction: row-reverse */
+.inspiration-section {
+  flex-direction: row;
+}
+
+/* Đường kẻ ngang */
+hr {
+  border: 0;
+  height: 1px;
+  background-color: #ddd;
+  margin: 40px 0;
+}
+
+/* Responsive cho màn hình nhỏ hơn */
+@media (max-width: 768px) {
+  .section {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .image-container {
+    flex: 0 0 100%;
+    max-width: 100%;
+    aspect-ratio: 16 / 9; /* Thay đổi tỉ lệ ảnh cho di động nếu cần */
+  }
+
+  .privacy-page h1,
+  .privacy-page h2 {
+    text-align: center;
+  }
 }

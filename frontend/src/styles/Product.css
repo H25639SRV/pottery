@@ -1,69 +1,137 @@
+/* Product.css */
+
 .product-page {
-  padding: 50px 80px; /* tăng khoảng cách lề hai bên */
+  padding-top: 0;
+  padding-bottom: 50px;
   background-color: #fffaf5;
   min-height: 80vh;
 }
 
-.product-title {
+/* --- Banner Section (Dùng wrapper cho ảnh và overlay) --- */
+.product-banner-wrapper {
+  position: relative; /* Quan trọng: Để overlay căn theo wrapper */
+  width: 100%;
+  height: 350px;
+  overflow: hidden;
+  margin-bottom: 30px;
+}
+
+.product-banner-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.product-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4); /* Lớp phủ mờ */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-banner-title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #fff;
+  /* Loại bỏ background: rgba(0, 0, 0, 0.3) khỏi tiêu đề để chữ rõ hơn */
+  padding: 15px 30px;
+  border-radius: 10px;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7); /* Thêm bóng chữ */
+}
+
+/* Tiêu đề chi tiết dưới banner */
+.product-title-detail {
   text-align: center;
   font-size: 2rem;
   margin-bottom: 30px;
-  color: #333;
+  color: #4a3321;
 }
 
+/* --- Product Grid --- */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 25px;
-  justify-items: center;
+  /* Phóng to card: min-width 300px */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  padding: 0 20px; /* Điều chỉnh padding */
+  max-width: 1400px;
+  margin: 30px auto;
 }
 
+/* ✅ Đã sửa lỗi: Bỏ width cứng để card có thể giãn theo grid */
 .product-card {
-  width: 200px;
+  width: 100%; /* Chiếm toàn bộ không gian grid cell */
+  max-width: 400px; /* Giới hạn kích thước tối đa */
   background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 15px; /* Tăng padding */
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
 }
 
 .product-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
 
+/* ✅ Đã sửa lỗi: Bỏ width/height cứng để ảnh to hơn */
 .product-image {
-  width: 160px;
-  height: 160px;
+  width: 100%;
+  /* Tăng chiều cao ảnh */
+  height: 350px;
   object-fit: cover;
-  border-radius: 10px;
-  margin: 0 auto;
+  border-radius: 8px;
+  margin: 0 auto 15px;
   display: block;
 }
 
 .product-name {
-  font-size: 1.2rem;
+  font-size: 1.3rem; /* Tăng font size */
   margin: 10px 0 5px;
-  color: #222;
+  color: #4a3321;
+  font-weight: 600;
 }
 
 .product-price {
-  font-size: 1rem;
-  color: #e63946;
+  font-size: 1.1rem; /* Tăng font size */
+  color: #cc5500;
   margin-bottom: 15px;
+  font-weight: bold;
 }
 
 .add-to-cart {
-  background-color: #007bff;
+  background-color: #5a3e2b; /* Màu nâu mộc */
   color: white;
   border: none;
-  padding: 10px 16px;
-  border-radius: 20px;
+  padding: 10px 20px;
+  border-radius: 6px;
   cursor: pointer;
   transition: background 0.3s ease;
+  font-weight: 500;
 }
 
 .add-to-cart:hover {
-  background-color: #0056b3;
+  background-color: #7b573d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .product-banner {
+    height: 250px;
+  }
+  .product-banner-title {
+    font-size: 2.5rem;
+  }
+  .product-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+  .product-image {
+    height: 280px;
+  }
 }

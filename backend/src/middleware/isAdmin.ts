@@ -1,19 +1,14 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
 
+// Middleware này PHẢI chạy SAU authMiddleware
 export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader)
-    return res.status(401).json({ message: "No token provided" });
+  // Lấy role từ request (đã được gán bởi authMiddleware)
+  const role = (req as any).role;
 
-  const token = authHeader.split(" ")[1];
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    if ((decoded as any).role !== "ADMIN") {
-      return res.status(403).json({ message: "Forbidden: Admins only" });
-    }
-    next();
-  } catch (err) {
-    return res.status(401).json({ message: "Invalid token" });
+  if (role && role === "ADMIN") {
+    next(); // Là Admin, cho phép đi tiếp
+  } else {
+    // Không phải admin hoặc không có role
+    return res.status(403).json({ message: "Forbidden: Admins only" });
   }
 };

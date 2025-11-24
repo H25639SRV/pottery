@@ -22,16 +22,21 @@ export const TRAINING_DATA = [
   {
     keywords: ["địa chỉ"],
     answer:
-      "Shop mình hiện tại không có địa chỉ, shop chỉ bán trên các nền tảng online thôi nhé <3",
+      "Shop mình nằm ở số 25, đường Lê Văn Lương, quận Thanh Xuân, Hà Nội nhé <3",
   },
   {
     keywords: ["giá", "tiền"],
     answer:
-      "Giá của sản phẩm bên mình chỉ loanh quanh từ 400-700 cá thôi ạ, chi tiết hãy chờ chủ sốp trả lời nhé <3",
+      "Giá của sản phẩm bên mình chỉ loanh quanh từ 189-249 cá thôi ạ, chi tiết hãy chờ chủ sốp trả lời nhé <3",
   },
   {
     keywords: ["sản phẩm"],
     answer:
       "Cửa hàng bên mình chuyên bán các sản phẩm về gốm sứ, đặc biệt là chậu hoa. Nếu bạn cần hỏi gì về kiến thức chăm sóc cây và hoa có thể hỏi mình nhé <3",
+  },
+  {
+    keywords: ["custom", "tự thiết kế", "sticker"],
+    answer:
+      "Giá của sản phẩm tự thiết kế bên mình là 249 cá sau khi đã tự thiết kế ạ",
   },
 ];

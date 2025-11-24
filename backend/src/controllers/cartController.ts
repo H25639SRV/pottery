@@ -1,186 +1,248 @@
-// src/controllers/cartController.ts
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// 🧩 Lấy giỏ hàng của user
+// ------------------------------------------------------------------
+// 🧩 Lấy giỏ hàng (POST /api/cart/get-cart)
+// ------------------------------------------------------------------
 export const getCart = async (req: Request, res: Response) => {
   try {
-    const userId = parseInt(req.params.userId, 10);
-    console.log("🟢 [getCart] userId =", userId, "typeof:", typeof userId);
+    // Lấy userId từ body (vì dùng method POST)
+    const userId = Number(req.body.userId);
 
-    if (isNaN(userId)) {
-      return res.status(400).json({ error: "Invalid userId" });
+    console.log("🟢 [getCart] Request for userId:", userId);
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ error: "Invalid userId provided" });
     }
 
-    // chắc chắn user tồn tại
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+    // 🛡️ BẢO VỆ: Kiểm tra User có tồn tại không
+    const userExists = await prisma.user.findUnique({ where: { id: userId } });
+    if (!userExists) {
+      console.warn(`⚠️ [getCart] User ID ${userId} not found in DB.`);
+      return res
+        .status(404)
+        .json({ error: "User not found. Please logout and login again." });
     }
 
+    // Tìm giỏ hàng
     let cart = await prisma.cart.findFirst({
       where: { userId },
-      include: { items: { include: { product: true } } },
+      include: {
+        items: {
+          include: { product: true }, // Kèm thông tin sản phẩm (ảnh, giá...)
+          orderBy: { id: "asc" }, // Sắp xếp item theo thứ tự thêm vào
+        },
+      },
     });
 
-    console.log("📦 [getCart] cart found:", cart ? cart.id : "none");
-
+    // Nếu chưa có giỏ hàng -> Tạo mới
     if (!cart) {
+      console.log(`🆕 [getCart] Creating new cart for userId: ${userId}`);
       cart = await prisma.cart.create({
         data: { userId },
         include: { items: { include: { product: true } } },
       });
-      console.log("🆕 [getCart] created new cart:", cart.id);
     }
 
     res.json(cart);
   } catch (error: any) {
-    console.error("❌ [getCart] error:", error.message || error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    console.error("❌ [getCart] Error:", error);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error while fetching cart" });
   }
 };
 
-// 🧩 Thêm sản phẩm vào giỏ
+// ------------------------------------------------------------------
+// 🧩 Thêm sản phẩm vào giỏ (POST /api/cart/add)
+// ------------------------------------------------------------------
 export const addToCart = async (req: Request, res: Response) => {
   try {
-    // ép kiểu number phòng trường hợp client gửi chuỗi
     const userId = Number(req.body.userId);
     const productId = Number(req.body.productId);
     const quantity = Number(req.body.quantity) || 1;
 
-    console.log("🟢 [addToCart] payload:", { userId, productId, quantity });
+    console.log(
+      `➕ [addToCart] User: ${userId}, Product: ${productId}, Qty: ${quantity}`
+    );
 
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({ error: "Invalid or missing userId" });
-    }
-    if (!productId || isNaN(productId)) {
-      return res.status(400).json({ error: "Invalid or missing productId" });
+    if (!userId || isNaN(userId))
+      return res.status(400).json({ error: "Invalid userId" });
+    if (!productId || isNaN(productId))
+      return res.status(400).json({ error: "Invalid productId" });
+
+    // 🛡️ BẢO VỆ 1: Check User
+    const userExists = await prisma.user.findUnique({ where: { id: userId } });
+    if (!userExists) {
+      return res.status(404).json({ error: "User not found in Database" });
     }
 
-    // kiểm tra user tồn tại
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    // kiểm tra product tồn tại
-    const product = await prisma.product.findUnique({
+    // 🛡️ BẢO VỆ 2: Check Product
+    const productExists = await prisma.product.findUnique({
       where: { id: productId },
     });
-    if (!product) {
-      return res.status(404).json({ error: "Product not found" });
+    if (!productExists) {
+      return res.status(404).json({ error: "Product not found in Database" });
     }
 
-    // tìm hoặc tạo cart cho user
+    // 1. Tìm hoặc Tạo giỏ hàng
     let cart = await prisma.cart.findFirst({ where: { userId } });
 
     if (!cart) {
-      cart = await prisma.cart.create({ data: { userId } });
-      console.log("🆕 [addToCart] created cart id:", cart.id);
+      try {
+        cart = await prisma.cart.create({ data: { userId } });
+      } catch (dbError: any) {
+        // Bắt lỗi nếu userId không hợp lệ ở cấp độ DB
+        if (dbError.code === "P2003") {
+          return res
+            .status(400)
+            .json({ error: "Foreign key constraint failed: Invalid User ID" });
+        }
+        throw dbError;
+      }
     }
 
-    // tìm item đã có
+    // 2. Kiểm tra sản phẩm đã có trong giỏ chưa
     const existingItem = await prisma.cartItem.findFirst({
-      where: { cartId: cart.id, productId },
+      where: {
+        cartId: cart.id,
+        productId: productId,
+      },
     });
 
     if (existingItem) {
-      const updated = await prisma.cartItem.update({
+      // Nếu có rồi -> Cộng dồn số lượng
+      await prisma.cartItem.update({
         where: { id: existingItem.id },
         data: { quantity: existingItem.quantity + quantity },
       });
-      console.log("🔁 [addToCart] updated item:", updated.id);
+      console.log(
+        `🔄 [addToCart] Increased quantity for item ${existingItem.id}`
+      );
     } else {
-      const created = await prisma.cartItem.create({
+      // Nếu chưa có -> Tạo item mới
+      await prisma.cartItem.create({
         data: {
           cartId: cart.id,
-          productId,
-          quantity,
+          productId: productId,
+          quantity: quantity,
         },
       });
-      console.log("➕ [addToCart] created item:", created.id);
+      console.log(`✅ [addToCart] Added new item to cart ${cart.id}`);
     }
 
+    // 3. Trả về giỏ hàng mới nhất để Frontend cập nhật ngay
     const updatedCart = await prisma.cart.findFirst({
       where: { id: cart.id },
-      include: { items: { include: { product: true } } },
+      include: {
+        items: { include: { product: true }, orderBy: { id: "asc" } },
+      },
     });
 
     res.json(updatedCart);
   } catch (error: any) {
-    console.error("❌ [addToCart] error:", error.message || error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    console.error("❌ [addToCart] Critical Error:", error);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error while adding to cart" });
   }
 };
 
-// 🧩 Xóa sản phẩm khỏi giỏ
+// ------------------------------------------------------------------
+// 🧩 Xóa sản phẩm khỏi giỏ (POST /api/cart/remove)
+// ------------------------------------------------------------------
 export const removeFromCart = async (req: Request, res: Response) => {
   try {
     const userId = Number(req.body.userId);
     const productId = Number(req.body.productId);
 
-    console.log("🟢 [removeFromCart] payload:", { userId, productId });
+    console.log(`🗑️ [removeFromCart] User: ${userId}, Product: ${productId}`);
 
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({ error: "Invalid or missing userId" });
-    }
-    if (!productId || isNaN(productId)) {
-      return res.status(400).json({ error: "Invalid or missing productId" });
-    }
+    if (!userId || isNaN(userId))
+      return res.status(400).json({ error: "Invalid userId" });
 
     const cart = await prisma.cart.findFirst({ where: { userId } });
     if (!cart) return res.status(404).json({ error: "Cart not found" });
 
+    // Xóa item khớp với cartId và productId
     await prisma.cartItem.deleteMany({
-      where: { cartId: cart.id, productId },
+      where: {
+        cartId: cart.id,
+        productId: productId,
+      },
     });
 
+    // Trả về giỏ hàng mới
     const updatedCart = await prisma.cart.findFirst({
       where: { id: cart.id },
-      include: { items: { include: { product: true } } },
+      include: {
+        items: { include: { product: true }, orderBy: { id: "asc" } },
+      },
     });
 
     res.json(updatedCart);
   } catch (error: any) {
-    console.error("❌ [removeFromCart] error:", error.message || error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    console.error("❌ [removeFromCart] Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
-// 🧩 Thanh toán giỏ hàng (checkout)
+
+// ------------------------------------------------------------------
+// 🧩 Thanh toán: Tạo Đơn Hàng -> Xóa Giỏ Hàng
 export const checkoutCart = async (req: Request, res: Response) => {
   try {
     const userId = Number(req.body.userId);
-    console.log("🟢 [checkoutCart] payload:", { userId });
+    console.log(`💸 [checkoutCart] Processing for User: ${userId}`);
 
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({ error: "Invalid or missing userId" });
+    if (!userId || isNaN(userId))
+      return res.status(400).json({ error: "Invalid userId" });
+
+    // 1. Tìm giỏ hàng và các món trong đó
+    const cart = await prisma.cart.findFirst({
+      where: { userId },
+      include: { items: { include: { product: true } } },
+    });
+
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ error: "Cart is empty or not found" });
     }
 
-    // kiểm tra user tồn tại
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    // 2. Tính tổng tiền đơn hàng
+    const totalAmount = cart.items.reduce((sum, item) => {
+      return sum + item.product.price * item.quantity;
+    }, 0);
 
-    // tìm giỏ hàng
-    const cart = await prisma.cart.findFirst({ where: { userId } });
-    if (!cart) {
-      return res.status(404).json({ error: "Cart not found" });
-    }
+    // 3. TẠO ĐƠN HÀNG (ORDER) MỚI VÀO DB
+    // Lưu ý: Model Prisma của bạn phải có bảng Order và OrderItem
+    const newOrder = await prisma.order.create({
+      data: {
+        userId: userId,
+        total: totalAmount,
+        status: "PENDING", // Trạng thái mặc định: Chờ xử lý
+        items: {
+          create: cart.items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            price: item.product.price, // Lưu giá tại thời điểm mua
+          })),
+        },
+      },
+    });
 
-    // xóa toàn bộ item trong giỏ (coi như checkout)
+    console.log(
+      `✅ [checkoutCart] Created Order #${newOrder.id} for User ${userId}`
+    );
+
+    // 4. Xóa sạch giỏ hàng sau khi đã tạo đơn thành công
     await prisma.cartItem.deleteMany({
       where: { cartId: cart.id },
     });
 
-    // có thể mở rộng để tạo đơn hàng thực tế ở đây
-    console.log("✅ [checkoutCart] Cart cleared after checkout:", cart.id);
-
-    res.json({ message: "Checkout successful" });
+    res.json({ message: "Checkout successful", orderId: newOrder.id });
   } catch (error: any) {
-    console.error("❌ [checkoutCart] error:", error.message || error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    console.error("❌ [checkoutCart] Error:", error);
+    res.status(500).json({ error: "Internal Server Error during checkout" });
   }
 };

@@ -3,186 +3,107 @@ import fs from "fs";
 import path from "path";
 import { createCanvas, loadImage, Image } from "canvas";
 import sharp from "sharp";
+import * as renderService from "../services/renderService";
 
-const OUTPUT_DIR = path.join(__dirname, "../../public/render_output");
-if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+const PUBLIC_DIR = path.join(__dirname, "../../public");
+const TEMPLATE_DIR = path.join(PUBLIC_DIR, "templates");
+// Định nghĩa thư mục Sticker
+const STICKER_DIR = path.join(PUBLIC_DIR, "sticker");
+const OUTPUT_DIR = path.join(PUBLIC_DIR, "render_output");
 
-// --- 🌐 Cấu hình hình dạng cho các template (Dễ dàng mở rộng) ---
-const VASE_SHAPE_MAP: { [key: string]: "round" | "cylinder" } = {
-  render1: "round",
-  render2: "cylinder",
-};
+if (!fs.existsSync(TEMPLATE_DIR))
+  fs.mkdirSync(TEMPLATE_DIR, { recursive: true });
+if (!fs.existsSync(OUTPUT_DIR)) {
+  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+}
 
-// --- 🔧 Hàm warp pattern đơn giản hóa với độ cong nhẹ và opacity ---
+/**
+ * Hàm mới: Chỉ vẽ pattern duy nhất, căn giữa và áp dụng fade dọc.
+ */
 const warpPatternAdvanced = (
   patternImg: Image,
   vaseWidth: number,
-  vaseHeight: number,
-  vaseShape: "round" | "cylinder" = "round"
+  vaseHeight: number
 ) => {
   const canvas = createCanvas(vaseWidth, vaseHeight);
   const ctx = canvas.getContext("2d");
 
-  // Điều chỉnh repeat factor dựa trên hình dạng
-  const repeatFactor = vaseShape === "cylinder" ? 2.0 : 2.5;
-
-  // Vẫn cần một pattern canvas đủ rộng để tránh lặp lại đột ngột khi scaling
-  const patternCanvas = createCanvas(vaseWidth * repeatFactor, vaseHeight);
-  const patternCtx = patternCanvas.getContext("2d");
-
-  const patternCanvasPattern = patternCtx.createPattern(patternImg, "repeat");
-  if (patternCanvasPattern) {
-    patternCtx.fillStyle = patternCanvasPattern;
-    patternCtx.fillRect(0, 0, vaseWidth * repeatFactor, vaseHeight);
-  }
-
-  // Padding cho phần trên và dưới (có thể điều chỉnh)
-  const topPadding = vaseShape === "cylinder" ? 60 : 120;
-  const bottomPadding = vaseShape === "cylinder" ? 40 : 120;
+  const topPadding = 60;
+  const bottomPadding = 40;
   const effectiveHeight = vaseHeight - topPadding - bottomPadding;
+  const baseOpacity = 1.0;
 
-  // Tăng opacity mặc định
-  const baseOpacity = vaseShape === "round" ? 1.0 : 0.9; // Đảm bảo độ đậm cao nhất: Round 1.0, Cylinder 0.9
+  // 📐 TÍNH TOÁN KÍCH THƯỚC VÀ VỊ TRÍ CỦA MỘT PATTERN DUY NHẤT
+
+  const patternOriginalWidth = patternImg.width;
+  const patternOriginalHeight = patternImg.height;
+
+  // Pattern chiếm khoảng 50% chiều rộng của bình
+  const patternRenderWidth = vaseWidth * 0.5;
+  // Tính chiều cao pattern tương ứng để giữ tỉ lệ
+  const patternRenderHeight =
+    patternOriginalHeight * (patternRenderWidth / patternOriginalWidth);
+
+  // Vị trí đặt Pattern
+  const patternX = (vaseWidth - patternRenderWidth) / 2; // Căn giữa X
+  // Đặt Pattern giữa vùng hiệu dụng theo chiều dọc
+  const patternY = topPadding + (effectiveHeight - patternRenderHeight) / 2;
+
+  // -------------------------------------------------------------
+  // VÒNG LẶP ĐỂ TẠO HIỆU ỨNG FADE THEO CHIỀU DỌC
+  // -------------------------------------------------------------
 
   for (let y = 0; y < vaseHeight; y++) {
-    let scale: number;
-    let opacity: number;
-    let scaledWidth: number = 0;
-    let offsetX: number = 0;
-
+    // Chỉ xử lý trong vùng hiệu dụng của bình
     if (y < topPadding || y >= vaseHeight - bottomPadding) {
-      ctx.globalAlpha = 0;
       continue;
     }
 
+    // 1. Tính toán hiệu ứng mờ dọc (Vertical Fade)
     const normalizedY = (y - topPadding) / effectiveHeight;
-
-    // --- LOGIC MỚI (Universal: Nén lại, tạo độ cong nhẹ, áp dụng cho mọi hình dạng) ---
-
-    // 1. Tính toán Scale (Độ nén ngang)
-    if (vaseShape === "cylinder") {
-      // Giữ cho scale = 1.0 để pattern trên hình trụ thẳng tuyệt đối
-      scale = 1.0;
-    } else {
-      // CÔNG THỨC MỚI: Đảm bảo LỒI Ở GIỮA và LÕM Ở HAI ĐẦU (Scale max ở giữa)
-      const compressionFactor = 0.35;
-      const sinValue = Math.sin(normalizedY * Math.PI);
-      // Scale sẽ nằm trong khoảng [1.0 - compressionFactor, 1.0]
-      scale = 1.0 - compressionFactor + compressionFactor * sinValue;
-    }
-
-    // 2. Tính toán Opacity (Độ mờ)
-
-    // Opacity Dọc (Vertical Fade: Mờ dần ở phía trên/dưới)
-    const verticalFadeRange = 0.15;
     let verticalOpacity: number = 1;
+    const verticalFadeRange = 0.15; // 15% trên và dưới
 
     if (normalizedY < verticalFadeRange) {
       verticalOpacity = normalizedY / verticalFadeRange;
     } else if (normalizedY > 1 - verticalFadeRange) {
       verticalOpacity = (1 - normalizedY) / verticalFadeRange;
     }
-    verticalOpacity = Math.max(0, Math.min(1, verticalOpacity));
+    verticalOpacity = Math.max(0.1, Math.min(1, verticalOpacity));
 
-    // Opacity Ngang (Horizontal Fade)
-    const horizontalFadeRange = 0.25;
-    let horizontalOpacity = 1.0;
-    const distanceFromCenter = Math.abs(0.5 - normalizedY);
-    const normalizedDistanceFromCenter = distanceFromCenter / 0.5;
-
-    if (normalizedDistanceFromCenter > 1 - horizontalFadeRange) {
-      horizontalOpacity =
-        (1 - normalizedDistanceFromCenter) / horizontalFadeRange;
-    }
-    horizontalOpacity = Math.max(0.1, Math.min(1, horizontalOpacity));
-
-    // Opacity tổng thể
-    opacity = verticalOpacity * horizontalOpacity * baseOpacity;
-
-    // --- Áp dụng ---
-    scaledWidth = vaseWidth * scale;
-    offsetX = (vaseWidth - scaledWidth) / 2;
-
+    // 2. Tính toán Opacity cuối cùng
+    let opacity = verticalOpacity * baseOpacity;
     ctx.globalAlpha = opacity;
-    (ctx as any).imageSmoothingQuality = "high";
 
-    // Sử dụng patternCanvas mới với width đã giảm
-    ctx.drawImage(
-      patternCanvas,
-      0,
-      y,
-      vaseWidth * repeatFactor, // Chiều rộng mới
-      1,
-      offsetX,
-      y,
-      scaledWidth,
-      1
-    );
+    // 3. VẼ HÀNG PIXEL (Pattern duy nhất)
+
+    // Kiểm tra xem y có nằm trong vùng pattern đã tính toán
+    if (y >= patternY && y < patternY + patternRenderHeight) {
+      // Tính toán vị trí pixel Y tương ứng trên ảnh Pattern gốc
+      const patternSourceY =
+        (y - patternY) * (patternOriginalHeight / patternRenderHeight);
+
+      // Vẽ 1 hàng pixel từ patternImg:
+      ctx.drawImage(
+        patternImg,
+        0, // Source X
+        patternSourceY, // Source Y: Vị trí Y tương ứng trên ảnh pattern
+        patternOriginalWidth, // Source Width
+        1, // Source Height
+
+        // Destination
+        patternX, // Dest X (Vị trí căn giữa)
+        y, // Dest Y
+        patternRenderWidth, // Dest Width (Chiều rộng đã scale)
+        1 // Dest Height
+      );
+    }
   }
-
   ctx.globalAlpha = 1;
   return canvas;
 };
 
-// --- Các hàm khác không đổi (đã loại bỏ lighting/depth map tạm thời cho kiểm thử) ---
-const createMaskFromAlpha = async (
-  imagePath: string,
-  width: number,
-  height: number
-): Promise<Buffer> => {
-  const BLUR_AMOUNT = 5;
-  try {
-    const metadata = await sharp(imagePath).metadata();
-    if (metadata.channels === 4 && metadata.hasAlpha) {
-      console.log("✅ Sử dụng alpha channel làm mask");
-      return await sharp(imagePath)
-        .resize(width, height)
-        .extractChannel("alpha")
-        .blur(BLUR_AMOUNT)
-        .toBuffer();
-    } else {
-      console.log("⚠️ Tạo mask từ brightness");
-      return await sharp(imagePath)
-        .resize(width, height)
-        .greyscale()
-        .normalise()
-        .threshold(100)
-        .blur(BLUR_AMOUNT)
-        .toBuffer();
-    }
-  } catch (error) {
-    console.error("❌ Lỗi tạo mask:", error);
-    return await sharp({
-      create: { width, height, channels: 1, background: 255 },
-    } as any)
-      .png()
-      .toBuffer();
-  }
-};
-
-const createLightingMap = async (
-  // Tạm thời bỏ qua nếu không cần blend phức tạp
-  templatePath: string,
-  width: number,
-  height: number
-): Promise<Buffer> => {
-  return sharp({
-    create: { width, height, channels: 1, background: "white" }, // Trả về map trắng để không ảnh hưởng
-  } as any).toBuffer();
-};
-
-const createDepthMap = async (
-  // Tạm thời bỏ qua nếu không cần blend phức tạp
-  templatePath: string,
-  width: number,
-  height: number,
-  vaseShape: "round" | "cylinder"
-): Promise<Buffer> => {
-  return sharp({
-    create: { width, height, channels: 1, background: "white" }, // Trả về map trắng để không ảnh hưởng
-  } as any).toBuffer();
-};
-
+// Hàm removeWhiteBackground (giữ nguyên)
 const removeWhiteBackground = async (
   patternBuffer: Buffer,
   threshold: number = 245
@@ -213,6 +134,7 @@ const removeWhiteBackground = async (
   }
 };
 
+// Hàm getPatternBrightness (giữ nguyên)
 const getPatternBrightness = async (patternBuffer: Buffer): Promise<number> => {
   try {
     const { dominant } = await sharp(patternBuffer).stats();
@@ -224,104 +146,200 @@ const getPatternBrightness = async (patternBuffer: Buffer): Promise<number> => {
   }
 };
 
-// --- ⚙️ Controller chính ---
 export const renderPattern = async (req: Request, res: Response) => {
+  let tempFilePath: string | undefined;
+
   try {
-    const { patternBase64, templatePath } = req.body;
-    if (!patternBase64 || !templatePath) {
-      return res.status(400).json({ error: "Thiếu dữ liệu đầu vào" });
+    const { templateName, stickerPath } = req.body;
+    const patternFile = req.file;
+
+    if (!templateName) {
+      return res.status(400).json({ error: "Thiếu templateName" });
     }
+
+    let patternBuffer: Buffer;
+    let patternFileName: string;
+    let fileSource: string;
+
+    // 🔑 LOGIC: Ưu tiên xử lý Sticker
+    if (stickerPath) {
+      // --- Xử lý Sticker ---
+      const filename = path.basename(stickerPath);
+      const fullStickerPath = path.join(STICKER_DIR, filename);
+
+      if (!fs.existsSync(fullStickerPath)) {
+        console.error(`❌ Không tìm thấy sticker: ${fullStickerPath}`);
+        return res
+          .status(404)
+          .json({ error: `Không tìm thấy sticker: ${filename}` });
+      }
+
+      patternFileName = filename;
+      patternBuffer = fs.readFileSync(fullStickerPath);
+      fileSource = "Sticker";
+      console.log(`💿 Đọc sticker từ disk: ${fullStickerPath}`);
+    } else if (patternFile) {
+      // --- Xử lý File Upload ---
+      patternFileName = patternFile.originalname || "unknown_pattern.png";
+      tempFilePath = patternFile.path;
+      fileSource = "Upload";
+
+      const MAX_SIZE_MB = 10;
+      const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+      if (patternFile.size > MAX_SIZE_BYTES) {
+        console.error(
+          `❌ File quá lớn: ${(patternFile.size / 1024 / 1024).toFixed(2)}MB`
+        );
+        if (patternFile.path) {
+          fs.unlinkSync(patternFile.path);
+          console.log(`🗑️ Đã xóa file tạm (quá lớn): ${patternFile.path}`);
+        }
+        return res.status(413).json({
+          error: `File hoa văn quá lớn. Vui lòng chọn ảnh nhỏ hơn ${MAX_SIZE_MB}MB.`,
+        });
+      }
+
+      if (!tempFilePath) {
+        throw new Error("Không tìm thấy đường dẫn file.");
+      }
+      console.log(`💿 Đọc file tạm từ disk: ${tempFilePath}`);
+      patternBuffer = fs.readFileSync(tempFilePath);
+    } else {
+      // Nếu không có cả stickerPath và patternFile, mới trả về lỗi
+      return res.status(400).json({ error: "Thiếu hoa văn hoặc sticker" });
+    }
+
+    const templatePath = path.join(TEMPLATE_DIR, templateName);
+
+    if (!fs.existsSync(templatePath)) {
+      console.error(`❌ Không tìm thấy ảnh template: ${templatePath}`);
+      return res.status(404).json({ error: "Không tìm thấy ảnh template" });
+    }
+
     console.log(
-      "🎨 Bắt đầu render pattern v27 (Round scale fixed to convex/phồng giữa)..."
+      "🎨 Bắt đầu render pattern (Quy trình 100% Canvas Composite)..."
     );
-    console.log(`📐 Template: ${templatePath}`);
-    const templateImg = await loadImage(templatePath);
-    const width = templateImg.width;
-    const height = templateImg.height;
-    console.log(`📏 Kích thước: ${width}x${height}`);
-    let patternBuffer: Buffer = Buffer.from(patternBase64, "base64");
+
+    // --- [LOGIC CANVAS] ---
+
+    // 1. CHUẨN BỊ
     const metadata = await sharp(patternBuffer).metadata();
     if (!metadata.hasAlpha) {
       console.log("⚠️ Loại bỏ background trắng");
-      patternBuffer = await removeWhiteBackground(patternBuffer, 240);
+      patternBuffer = await removeWhiteBackground(patternBuffer);
     }
     const patternBrightness = await getPatternBrightness(patternBuffer);
     const isDarkPattern = patternBrightness < 100;
 
-    // Điều chỉnh pattern ban đầu (giữ tương đối đơn giản)
+    // 🔑 ĐIỀU CHỈNH: Làm rõ pattern hơn
+    console.log(`🔄 Modulating pattern...`);
     patternBuffer = await sharp(patternBuffer)
-      .modulate({ brightness: 1.1, saturation: 0.9 })
-      .linear(1.1, -10)
+      // Tăng nhẹ độ sáng (brightness) và độ bão hòa (saturation)
+      .modulate({ brightness: 1.2, saturation: 1.1 })
       .toBuffer();
+
+    // 2. TẢI VÀO CANVAS
+    console.log("🚀 Tải ảnh vào Canvas...");
+    const templateImg = await loadImage(templatePath);
     const patternImg = await loadImage(patternBuffer);
 
-    const templateNameMatch = Object.keys(VASE_SHAPE_MAP).find((key) =>
-      templatePath.includes(key)
-    );
+    const width = templateImg.width;
+    const height = templateImg.height;
+    console.log(`📏 Kích thước: ${width}x${height}`);
 
-    let vaseShape: "round" | "cylinder" = "cylinder";
-    if (templateNameMatch) {
-      vaseShape = VASE_SHAPE_MAP[templateNameMatch];
-    } else if (Math.abs(width - height) < 50) {
-      vaseShape = "round";
-    }
+    // 3. WARP
+    console.log(`🏺 Warping pattern (Single Pattern Logic)...`);
+    const warpedCanvas = warpPatternAdvanced(patternImg, width, height);
 
-    console.log(`🏺 Hình dạng gốm: ${vaseShape.toUpperCase()}`);
-    console.log("🔄 Warping pattern đơn giản hóa...");
-    const warpedCanvas = warpPatternAdvanced(
-      patternImg,
-      width,
-      height,
-      vaseShape
-    );
-    const warpedBuffer = warpedCanvas.toBuffer("image/png");
+    // 4. GHÉP BẰNG CANVAS
+    console.log("🌈 Blend ảnh bằng Canvas...");
+    const mainCanvas = createCanvas(width, height);
+    const ctx = mainCanvas.getContext("2d");
 
-    console.log("🎭 Tạo mask (với blur giảm để giữ nét)...");
-    const alphaMask = await createMaskFromAlpha(templatePath, width, height);
+    // Vẽ ảnh gốc (có lá) làm nền
+    ctx.drawImage(templateImg, 0, 0, width, height);
 
-    // Tạm thời bỏ qua lighting map và depth map để kiểm tra hiệu ứng cơ bản
-    // Nếu kết quả tốt, chúng ta có thể thêm lại chúng với blend mode phù hợp hơn
-    // const lightingMap = await createLightingMap(templatePath, width, height);
-    // const depthMap = await createDepthMap(templatePath, width, height, vaseShape);
-
-    console.log("✂️ Áp dụng mask...");
-    let maskedPattern = await sharp(warpedBuffer)
-      .resize(width, height)
-      .composite([{ input: alphaMask, blend: "dest-in" }])
-      .toBuffer();
-
-    console.log("🌈 Blend trực tiếp lên template...");
-    // Với cách tiếp cận mới, chúng ta blend trực tiếp maskedPattern lên template
-    // Sử dụng 'overlay' hoặc 'multiply' nếu muốn pattern tương tác với màu nền.
-    // Nếu muốn pattern "phủ" lên, dùng 'over'.
-    let blendMode: any = "overlay"; // Hoặc "over" nếu muốn pattern phủ lên hoàn toàn
-    let postBrightness = 1.0;
-    let postSaturation = 1.0;
-
+    // Đặt chế độ blend
+    let blendMode: any = "overlay";
     if (isDarkPattern) {
       blendMode = "overlay";
-      postBrightness = 1.0;
-      postSaturation = 1.0;
+    }
+    ctx.globalCompositeOperation = blendMode;
+
+    // Vẽ hoa văn đã uốn (warped) lên trên
+    ctx.drawImage(warpedCanvas, 0, 0, width, height);
+
+    // Lấy buffer kết quả từ Canvas
+    const finalBuffer = mainCanvas.toBuffer("image/png");
+
+    // 5. CẮT (Dùng Sharp ở bước cuối)
+    console.log("✂️ Cắt ảnh (dùng Sharp)...");
+    let sharpInstance = sharp(finalBuffer);
+
+    const CROP_PX_SIDE = 16;
+    const cropWidth = width - 2 * CROP_PX_SIDE;
+    const cropHeight = height;
+
+    if (cropWidth > 0 && cropHeight > 0) {
+      console.log(
+        `✅ Áp dụng crop: ${cropWidth}x${cropHeight}, left: ${CROP_PX_SIDE}`
+      );
+      sharpInstance = sharpInstance.extract({
+        left: CROP_PX_SIDE,
+        top: 0,
+        width: cropWidth,
+        height: cropHeight,
+      });
+    } else {
+      console.warn(
+        `⚠️ Bỏ qua crop. Kích thước gốc (${width}x${height}) quá nhỏ.`
+      );
     }
 
-    const finalResult = await sharp(templatePath)
-      .composite([{ input: maskedPattern, blend: blendMode }])
-      .modulate({ brightness: postBrightness, saturation: postSaturation })
-      .sharpen(0.8, 0.5, 0.2) // Giảm sharpen nhẹ nhàng hơn một chút
-      .toBuffer();
+    const finalResult = await sharpInstance.toBuffer();
+    // --- [KẾT THÚC CẮT] ---
 
     const filename = `render_${Date.now()}.png`;
     const filePath = path.join(OUTPUT_DIR, filename);
     await fs.promises.writeFile(filePath, finalResult);
+    const resultUrl = `/render_output/${filename}`;
+
+    try {
+      await renderService.saveRenderResult(
+        templateName,
+        patternFileName,
+        resultUrl
+      );
+      console.log("✅ Đã lưu kết quả render vào DB");
+    } catch (dbError) {
+      console.error("❌ Lỗi lưu kết quả render vào DB:", dbError);
+    }
+
     console.log(`✅ Render hoàn tất: ${filename}`);
-    console.log(`  Pattern type: ${isDarkPattern ? "Dark" : "Light"}`);
-    console.log(`  Blend mode: ${blendMode}`);
     return res.status(200).json({
       message: "Render completed",
-      resultUrl: `/render_output/${filename}`,
+      resultUrl: resultUrl,
     });
   } catch (err: any) {
     console.error("❌ Render error:", err);
-    return res.status(500).json({ error: err.message });
+    if (err.message && err.message.includes("Input")) {
+      return res.status(500).json({
+        error: "Lỗi xử lý ảnh (Invalid Input), có thể file hoa văn bị lỗi.",
+      });
+    }
+    return res
+      .status(500)
+      .json({ error: err.message || "Lỗi máy chủ không xác định" });
+  } finally {
+    if (tempFilePath) {
+      try {
+        if (fs.existsSync(tempFilePath)) {
+          fs.unlinkSync(tempFilePath);
+          console.log(`🗑️ Đã xóa file tạm: ${tempFilePath}`);
+        }
+      } catch (cleanErr) {
+        console.error(`❌ Không thể xóa file tạm: ${tempFilePath}`, cleanErr);
+      }
+    }
   }
 };

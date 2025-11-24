@@ -12,6 +12,9 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import TryPatternPage from "./pages/TryPatternPage";
 import ChatWidget from "./components/Chat/ChatWidget";
+import ProductDetail from "./pages/ProductDetail";
+import AdminOrdersPage from "./pages/AdminOrdersPage";
+import AdminCustomRequestsPage from "./pages/AdminCustomRequestsPage";
 const App: React.FC = () => {
   return (
     <>
@@ -23,6 +26,12 @@ const App: React.FC = () => {
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/render" element={<TryPatternPage />} />
+          <Route path="/product/detail/:id" element={<ProductDetail />} />
+          <Route path="/admin/orders" element={<AdminOrdersPage />} />
+          <Route
+            path="/admin/custom-orders"
+            element={<AdminCustomRequestsPage />}
+          />
           <Route
             path="/admin/edit"
             element={

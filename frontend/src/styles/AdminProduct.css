@@ -1,130 +1,376 @@
-.product-form {
-  background: #fffaf5;
-  border-radius: 12px;
-  padding: 24px;
-  width: 440px;
-  margin: 0 auto 40px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+/* AdminProduct.css - Final Unified Version (FIXED WITH NEW WRAPPER) */
+
+.admin-page {
+  padding: 30px;
+  background-color: #f4f6f8;
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-title {
+  text-align: center;
+  margin-bottom: 40px;
+  color: #2c3e50;
+  font-size: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+/* --- FORM CONTAINER (Giữ nguyên) --- */
+.product-form-container {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  max-width: 1100px;
+  margin: 0 auto 60px;
+}
+
+.form-title {
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 15px;
+  margin-bottom: 25px;
+  color: #34495e;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+/* Grid Layout cho Form */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+.form-column {
   display: flex;
   flex-direction: column;
-  gap: 16px; /* ✅ Tạo khoảng cách đều giữa các trường */
+  gap: 20px;
 }
 
-.product-form input,
-.product-form textarea {
-  padding: 10px 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 15px;
-  transition: border-color 0.2s;
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
 }
 
-.image-input {
+/* Input Styles */
+label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 8px;
+  display: block;
+}
+
+input,
+select,
+textarea {
   width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  background-color: #fff;
+  box-sizing: border-box;
 }
-.product-form input:focus,
-.product-form textarea:focus {
-  border-color: #8b4513;
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
   outline: none;
 }
 
-.image-upload {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.input-with-icon {
+  position: relative;
 }
 
-.image-btn {
-  background-color: #8b4513;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
+.icon-label {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+  margin: 0;
 }
 
-.image-preview {
-  display: flex;
-  justify-content: center;
-  margin-top: -4px;
+.sub-images-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
 }
 
-.preview-img {
-  max-width: 160px;
-  max-height: 120px;
+/* Specs Section */
+.specs-section {
+  margin-top: 30px;
+  background: #f8fbff;
+  padding: 20px;
   border-radius: 10px;
-  border: 1px solid #ddd;
-  object-fit: cover;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  border: 1px dashed #b6dbf3;
 }
 
-.add-btn,
-.cancel-btn {
-  background-color: #8b4513;
+.specs-section h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  color: #2980b9;
+}
+
+.specs-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+/* Content Section */
+.content-section {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Buttons */
+.form-buttons {
+  margin-top: 40px;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.save-btn {
+  background: linear-gradient(135deg, #3498db, #2980b9);
   color: white;
+  padding: 14px 50px;
   border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.2s;
-  font-weight: 500;
-  font-size: 15px;
-  min-width: 120px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 10px rgba(52, 152, 219, 0.4);
 }
 
-/* Nút hover */
-.add-btn:hover {
-  background-color: #6d320a;
+.save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(52, 152, 219, 0.5);
 }
 
 .cancel-btn {
-  background-color: #b5651d;
+  background: #fff;
+  color: #e74c3c;
+  border: 2px solid #e74c3c;
+  padding: 12px 40px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .cancel-btn:hover {
-  background-color: #8b4513;
+  background: #e74c3c;
+  color: white;
 }
 
-/* ✅ Căn giữa và tạo khoảng cách giữa hai nút */
-.form-buttons {
-  display: flex;
-  justify-content: center; /* căn giữa theo chiều ngang */
-  align-items: center;
-  gap: 20px; /* tạo khoảng cách giữa hai nút */
-  margin-top: 10px;
-}
-
-.product-table {
+/* --- PRODUCT LIST SECTION WRAPPER (MỚI) --- */
+.product-list-section {
   width: 100%;
-  border-collapse: collapse;
+  max-width: 100%;
+  /* Dùng padding 30px để align với padding của admin-page */
+  padding: 0 30px;
+  box-sizing: border-box;
+  margin-top: 40px;
+}
+
+/* --- PRODUCT LIST & TABLE (ULTIMATE LAYOUT FIX) --- */
+.product-list {
+  /* Loại bỏ padding và margin không cần thiết, tập trung vào chiều rộng */
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0;
+
+  /* Đảm bảo xếp dọc */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Header chứa tiêu đề */
+.list-header-wrapper {
+  width: 100% !important;
+  display: block;
+  text-align: center;
+  margin-bottom: 25px;
+  padding-bottom: 10px;
+  border-bottom: 3px solid #3498db;
+}
+
+.list-header-wrapper h3 {
+  font-size: 2rem;
+  color: #2c3e50;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 0;
+  padding: 0;
+  display: block;
+}
+
+/* Bảng dữ liệu */
+.product-table {
+  width: 100% !important;
+  min-width: 800px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.product-table th,
+.product-table td {
+  padding: 20px 25px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+/* Chỉnh độ rộng các cột */
+.product-table th:nth-child(1) {
+  width: 10%;
+}
+.product-table th:nth-child(2) {
+  width: 25%;
+}
+.product-table th:nth-child(3) {
+  width: 15%;
+}
+.product-table th:nth-child(4) {
+  width: 15%;
 }
 
 .product-table th {
-  background-color: #8b4513;
+  background-color: #34495e;
   color: white;
-  padding: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.product-table td {
+.product-table tbody tr:hover {
+  background-color: #eef6fc;
+}
+
+/* Ảnh trong bảng */
+.table-img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
   border: 1px solid #ddd;
-  padding: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.action-buttons button {
+.sku-text {
+  display: inline-block;
+  margin-top: 8px;
+  color: #555;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #dfe6e9;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.category-badge {
+  background-color: #e3f2fd;
+  padding: 6px 12px;
+  border-radius: 20px;
+  color: #1565c0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.edit-btn,
+.delete-btn {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
   border: none;
-  padding: 6px 10px;
-  margin: 0 3px;
-  border-radius: 6px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+  font-size: 1.1rem;
 }
 
 .edit-btn {
-  background-color: #f4b400;
+  background-color: #fff;
+  color: #f39c12;
+  border: 2px solid #f39c12;
+}
+
+.edit-btn:hover {
+  background-color: #f39c12;
   color: white;
+  transform: translateY(-3px);
 }
 
 .delete-btn {
-  background-color: #d93025;
+  background-color: #fff;
+  color: #e74c3c;
+  border: 2px solid #e74c3c;
+}
+
+.delete-btn:hover {
+  background-color: #e74c3c;
   color: white;
+  transform: translateY(-3px);
+}
+
+/* Responsive Table */
+@media (max-width: 1024px) {
+  .product-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 992px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .specs-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-page {
+    padding: 15px;
+  }
+
+  .form-grid,
+  .specs-grid,
+  .row-2,
+  .sub-images-grid {
+    grid-template-columns: 1fr;
+  }
 }
