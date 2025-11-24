@@ -1,7 +1,7 @@
 .checkout-page {
   max-width: 800px;
   margin: 40px auto;
-  background: #fffdf8;
+  background: #d7d7ab;
   padding: 30px;
   border-radius: 20px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -9,7 +9,7 @@
 
 .checkout-page h2 {
   text-align: center;
-  color: #5a3825;
+  color: #5d6939;
   margin-bottom: 25px;
 }
 
@@ -24,7 +24,7 @@
   justify-content: space-between;
   padding: 8px 0;
   border-bottom: 1px dashed #ccc;
-  color: #3a2a1b;
+  color: #5d6939;
 }
 
 .checkout-total {
@@ -51,7 +51,7 @@
 .checkout-btn {
   display: block;
   width: 100%;
-  background-color: #6b4226;
+  background-color: #5d6939;
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -62,7 +62,7 @@
 }
 
 .checkout-btn:hover {
-  background-color: #8b5e3b;
+  background-color: #5d6939;
 }
 .payment-options {
   display: flex;
@@ -73,7 +73,7 @@
 
 .payment-btn {
   padding: 10px 20px;
-  border: 2px solid #7a4b2d;
+  border: 2px solid #5d6939;
   background: white;
   border-radius: 10px;
   cursor: pointer;
@@ -81,8 +81,8 @@
 }
 
 .payment-btn.selected {
-  background: #7a4b2d;
-  color: white;
+  background: #5d6939;
+  color: #d7d7ab;
 }
 
 .qr-image {
@@ -114,7 +114,7 @@
 
 .checkout-item-name {
   font-weight: 600;
-  color: #5d3b24;
+  color: #5d6939;
 }
 /* Thêm vào file Checkout.css */
 
@@ -126,7 +126,7 @@
 .checkout-section h3 {
   margin-bottom: 10px;
   font-size: 1.1rem;
-  color: #333;
+  color: #3b4224;
 }
 
 .address-input {

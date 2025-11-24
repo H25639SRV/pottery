@@ -2,7 +2,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 50px 20px;
-  background-color: #fff;
+  background-color: #d7d7ab;
   color: #333;
   line-height: 1.8;
   font-family: "Times New Roman", Times, serif;
@@ -74,7 +74,7 @@
 hr {
   border: 0;
   height: 1px;
-  background-color: #ddd;
+  background-color: #d7d7ab;
   margin: 40px 0;
 }
 

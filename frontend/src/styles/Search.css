@@ -9,12 +9,12 @@
 
 .search-title {
   text-align: center;
-  color: #8b4513;
+  color: #5d6939;
   margin-bottom: 24px;
 }
 
 .search-title span {
-  color: #5a2d0c;
+  color: #5d6939;
   font-weight: bold;
 }
 
@@ -47,13 +47,13 @@
 }
 
 .search-card h3 {
-  color: #5a2d0c;
+  color: #5d6939;
   font-size: 18px;
   margin: 8px 0;
 }
 
 .search-price {
-  color: #8b4513;
+  color: #5d6939;
   font-weight: bold;
   font-size: 16px;
 }

@@ -48,7 +48,7 @@
   text-align: center;
   font-size: 2rem;
   margin-bottom: 30px;
-  color: #4a3321;
+  color: #5d6939;
 }
 
 /* --- Product Grid --- */
@@ -106,7 +106,7 @@
 }
 
 .add-to-cart {
-  background-color: #5a3e2b; /* Màu nâu mộc */
+  background-color: #4c5630; /* Màu nâu mộc */
   color: white;
   border: none;
   padding: 10px 20px;
@@ -117,7 +117,7 @@
 }
 
 .add-to-cart:hover {
-  background-color: #7b573d;
+  background-color: #5d6939;
 }
 
 /* Responsive */

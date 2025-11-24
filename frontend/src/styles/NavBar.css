@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #5a3e2b;
+  background-color: #5d6939;
   padding: 12px 40px;
   color: white;
   position: sticky;
@@ -78,14 +78,14 @@
 .search-box {
   display: flex;
   align-items: center;
-  background-color: #7b573d; /* màu nâu Mộc Gốm */
+  background-color: #5f7715; /* màu nâu Mộc Gốm */
   border-radius: 20px;
   padding: 3px 8px;
   transition: all 0.25s ease;
 }
 
 .search-box:hover {
-  background-color: #8b5e3c;
+  background-color: #4f5637;
   box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
 }
 
@@ -108,7 +108,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: white;
+  color: #d7d7ab;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -124,7 +124,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: white;
+  color: #d7d7ab;
   transition: transform 0.2s ease, color 0.2s ease;
 }
 
@@ -165,8 +165,8 @@
   position: absolute;
   right: 0;
   margin-top: 10px;
-  background-color: #5b3a29; /* nâu đậm */
-  color: white;
+  background-color: #5d6939; /* nâu đậm */
+  color: #d7d7ab;
   border-radius: 10px;
   padding: 10px;
   min-width: 190px;
@@ -228,7 +228,7 @@
 /* Áp dụng hiệu ứng hover đồng nhất cho cả hai dropdown */
 .dropdown-item:hover,
 .dropdown-button:hover {
-  background-color: #7b573d; /* Màu nâu sáng hơn khi hover */
+  background-color: #758449; /* Màu nâu sáng hơn khi hover */
   color: #ffddaa;
   transform: none; /* Bỏ hiệu ứng scale cũ */
 }
@@ -272,7 +272,7 @@
   top: -6px;
   right: -8px;
   background-color: #d93025;
-  color: white;
+  color: #d7d7ab;
   border-radius: 50%;
   width: 22px;
   height: 22px;
@@ -306,7 +306,7 @@
 .search-suggestions li {
   padding: 8px 12px;
   cursor: pointer;
-  color: #5a3e2b;
+  color: #5d6939;
   transition: background 0.2s;
 }
 
@@ -353,7 +353,7 @@
 /* Ghi đè hiệu ứng hover */
 .dropdown-menu .dropdown-item:hover,
 .dropdown-menu .dropdown-button:hover {
-  background-color: #7b573d !important;
+  background-color: #5d6939 !important;
   color: #ffddaa !important;
   transform: none !important;
 }

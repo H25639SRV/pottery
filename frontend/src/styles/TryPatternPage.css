@@ -5,7 +5,7 @@
   /* Tông màu chủ đạo: Xanh Lá - Đất */
   --color-primary: #528b8b; /* Xanh ngọc trầm */
   --color-secondary: #ff7f50; /* San hô (Dùng cho Custom Request) */
-  --color-success: #45a049; /* Xanh lá cho Upload */
+  --color-success: #5d6939; /* Xanh lá cho Upload */
   --color-info: #007bff; /* Xanh dương cho Loading (spinner nếu có) */
   --color-shadow-light: rgba(0, 0, 0, 0.08);
 
@@ -222,7 +222,7 @@
 }
 
 .custom-file-label:hover {
-  background-color: #45a049;
+  background-color: #5d6939;
   transform: translateY(-2px);
 }
 
@@ -278,7 +278,7 @@
 
 .progress-bar {
   height: 100%;
-  background-color: #28a745;
+  background-color: #5d6939;
   width: 0%;
   border-radius: 10px;
   transition: width 0.3s ease;
@@ -384,7 +384,7 @@
   border-radius: 10px;
   transition: all 0.2s ease;
   padding: 5px;
-  background-color: white;
+  background-color: #d7d7ab;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 

@@ -65,7 +65,7 @@
 
 .sub-image:hover,
 .sub-image.active {
-  border-color: #5a3e2b; /* Viền nâu khi chọn */
+  border-color: #5d6939; /* Viền nâu khi chọn */
   opacity: 1;
 }
 
@@ -78,7 +78,7 @@
 
 .product-name {
   font-size: 2rem;
-  color: #4a3321;
+  color: #5d6939;
   margin-top: 0;
   margin-bottom: 10px;
   font-family: "Times New Roman", Times, serif;
@@ -145,7 +145,7 @@
 
 /* NÚT MUA HÀNG */
 .add-to-cart-btn {
-  background-color: #5a3e2b;
+  background-color: #5d6939;
   color: white;
   padding: 12px 30px;
   border: none;
@@ -159,7 +159,7 @@
 }
 
 .add-to-cart-btn:hover {
-  background-color: #3e2b1e;
+  background-color: #464f2d;
 }
 
 .product-story {

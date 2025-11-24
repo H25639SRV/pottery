@@ -7,9 +7,9 @@
 
   font-family: "Times New Roman", Times, serif;
 
-  color: #3b2f2f;
+  color: #5d6939;
 
-  background-color: #fffdf9;
+  background-color: #d7d7ab;
 }
 
 /* --- Slideshow --- */
@@ -69,7 +69,7 @@
 
   align-items: center;
 
-  color: white;
+  color: #d7d7ab;
 
   text-align: center;
 }
@@ -131,7 +131,7 @@
 
   background: none;
 
-  color: #5b3921;
+  color: #5d6939;
 
   border: none;
 
@@ -283,7 +283,7 @@
 
   font-size: 2rem;
 
-  color: #4a3321;
+  color: #5d6939;
 }
 
 /* SỬA LỖI GRID TẠI ĐÂY */
@@ -379,7 +379,7 @@
 
   font-weight: bold;
 
-  color: #7a4e2d;
+  color: #616b41;
 
   margin: 0 10px 15px;
 }
@@ -387,7 +387,7 @@
 .product-card button {
   margin-top: 10px;
 
-  background-color: #7a4e2d;
+  background-color: #657437;
 
   color: #fff;
 
@@ -407,7 +407,7 @@
 }
 
 .product-card button:hover {
-  background-color: #5e3820;
+  background-color: #333d12;
 
   transform: translateY(-1px);
 }

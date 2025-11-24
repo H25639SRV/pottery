@@ -216,7 +216,7 @@ const TryPatternPage: React.FC = () => {
 
   return (
     <div className="try-page">
-      <h1>✨ Thử Hoa Văn Lên Bình Gốm ✨</h1>
+      <h1>Thử Hoa Văn Lên Bình Gốm</h1>
       {products.map((p) => (
         <div key={p.id} className="try-section">
           {/* CỘT 1: ẢNH GỐC */}
@@ -233,7 +233,7 @@ const TryPatternPage: React.FC = () => {
 
             {/* 1. Chọn file upload */}
             <label className="custom-file-label" htmlFor={`file-${p.id}`}>
-              🌸 Chọn hoa văn từ máy tính
+              Chọn hoa văn từ máy tính
             </label>
             <input
               id={`file-${p.id}`}
@@ -339,13 +339,13 @@ const TryPatternPage: React.FC = () => {
                   onClick={() => handleDownload(p.id)}
                   className="custom-request-button"
                 >
-                  ⬇️ Tải về
+                  Tải về
                 </button>
                 <button
                   onClick={() => handleDelete(p.id)}
                   className="custom-request-button"
                 >
-                  🗑️ Xóa
+                  Xóa
                 </button>
               </div>
             )}
