@@ -6,6 +6,7 @@ import axios from "axios";
 import "../styles/ProductDetail.css";
 
 const API_URL = process.env.REACT_APP_API_URL || "";
+const CLIENT_URL = process.env.REACT_APP_CLIENT_URL || "";
 
 interface Product {
   id: number;
@@ -105,7 +106,7 @@ const ProductDetail: React.FC = () => {
       const res = await axios.get<Product>(`${API_URL}/api/products/${id}`);
       const data = res.data;
       setProduct(data);
-      setActiveImage(data.image);
+      setActiveImage(API_URL + "/" + data.image);
 
       // Xử lý ảnh
       processImages(data);
@@ -128,7 +129,7 @@ const ProductDetail: React.FC = () => {
 
     // Nếu ảnh đang xem (activeImage) bị lỗi, quay về ảnh gốc
     if (activeImage === imgUrl && product) {
-      setActiveImage(product.image);
+      setActiveImage(CLIENT_URL + "/" + product.image);
     }
   };
 
@@ -187,14 +188,13 @@ const ProductDetail: React.FC = () => {
               onError={() => handleImageError(activeImage)}
             />
           </div>
-
           {/* List ảnh nhỏ */}
-          {visibleGallery.length > 1 && (
+          {visibleGallery.length && (
             <div className="sub-images-list">
-              {visibleGallery.map((img, index) => (
+              {galleryList.map((img, index) => (
                 <img
                   key={index}
-                  src={img}
+                  src={CLIENT_URL + "/" + img}
                   alt={`Góc ${index}`}
                   className={`sub-image ${activeImage === img ? "active" : ""}`}
                   onClick={() => setActiveImage(img)}

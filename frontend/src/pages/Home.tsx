@@ -116,8 +116,7 @@ const Home: React.FC = () => {
         ))}
         <div className="hero-overlay">
           <h1 className="home-title">Mộc Gốm</h1>
-          <h2 className="home-title">Chậu cây tự tưới bằng gốm</h2>
-          <p className="home-subtitle">Tinh hoa Gốm Việt</p>
+          <p className="home-subtitle">Chậu cây tự tưới bằng gốm</p>
           <button className="home-button" onClick={() => navigate("/product")}>
             Bộ sưu tập
           </button>

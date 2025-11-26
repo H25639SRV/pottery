@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+// Giữ lại AxiosError để xử lý lỗi mạng
+import axios, { AxiosError } from "axios"; 
 import { useNavigate } from "react-router-dom";
-import { FaImage, FaEdit, FaTrash } from "react-icons/fa";
-// Giả định đường dẫn đến Context xác thực của bạn là đúng
+// Import toàn bộ module FAIcons
+import * as FAIcons from "react-icons/fa"; 
 import { useAuth } from "../context/AuthContext"; 
 import "../styles/AdminProduct.css";
 
-// Đảm bảo biến môi trường này được định nghĩa chính xác
+// 💡 FIX LỖI TS2786 BẰNG CÁCH ÉP KIỂU SAU KHI IMPORT
+// Điều này giúp TypeScript nhận ra các icon là component hợp lệ trong JSX
+const IconImage: React.FC = FAIcons.FaImage as any;
+const IconEdit: React.FC = FAIcons.FaEdit as any;
+const IconTrash: React.FC = FAIcons.FaTrash as any;
+
 const API_URL = process.env.REACT_APP_API_URL;
 
-const IconImage = FaImage as unknown as React.FC;
-const IconEdit = FaEdit as unknown as React.FC;
-const IconTrash = FaTrash as unknown as React.FC;
-
-// --- INTERFACES ---
+// --- INTERFACES (Giao diện dữ liệu) ---
 
 interface Category {
   id: number;
@@ -27,93 +29,75 @@ interface Product {
   stock: number;
   description: string;
   image: string;
-  subImages?: string[];
-  sku?: string;
-  dimensions?: string;
-  weight?: string;
-  material?: string;
-  origin?: string;
-  availability?: string;
-  story?: string;
-  // Cho phép categoryId là null (không có danh mục)
-  categoryId: number | string | null; 
-  category?: Category;
+  subImages: string[]; 
+  sku: string;
+  dimensions: string;
+  weight: string;
+  material: string;
+  origin: string;
+  availability: string;
+  story: string;
+  categoryId: number | null; 
+  category?: Category; 
 }
 
-// --- COMPONENT ---
+// --- GIÁ TRỊ FORM BAN ĐẦU ---
+
+const initialFormData: Product = {
+  id: 0,
+  name: "",
+  price: 0,
+  stock: 0,
+  description: "",
+  image: "",
+  subImages: [],
+  sku: "",
+  dimensions: "",
+  weight: "",
+  material: "",
+  origin: "",
+  availability: "Sẵn hàng",
+  story: "",
+  categoryId: null,
+};
+
+
+// --- COMPONENT CHÍNH ---
 
 const AdminProductPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAdmin, isLoading } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth(); 
 
-  // Khởi tạo products LUÔN LÀ MẢNG rỗng để ngăn lỗi .map
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [formData, setFormData] = useState<Product>(initialFormData);
 
-  const [formData, setFormData] = useState<Product>({
-    id: 0,
-    name: "",
-    price: 0,
-    stock: 0,
-    description: "",
-    image: "",
-    subImages: [],
-    sku: "",
-    dimensions: "",
-    weight: "",
-    material: "",
-    origin: "",
-    availability: "Sẵn hàng",
-    story: "",
-    categoryId: null, // Khởi tạo là null
-  });
-
-  const [subImg1, setSubImg1] = useState("");
-  const [subImg2, setSubImg2] = useState("");
-  const [subImg3, setSubImg3] = useState("");
-  const [subImg4, setSubImg4] = useState("");
-
+  const [subImgUrls, setSubImgUrls] = useState(["", "", "", ""]);
   const [editing, setEditing] = useState<boolean>(false);
   
-  // --- LOGIC XÁC THỰC VÀ FETCH DATA ---
+  // --- FETCH DATA LOGIC ---
   
-  useEffect(() => {
-    // 1. Nếu Auth Context vẫn đang tải, chờ đợi
-    if (isLoading) return;
-
-    // 2. Kiểm tra xác thực/phân quyền: Nếu không phải Admin, chuyển hướng
-    if (!user || !isAdmin) {
-      // Chuyển hướng ngay lập tức và dừng lại
-      navigate("/"); 
-      return; 
-    }
-    
-    // 3. Nếu là Admin và đã tải xong, tiến hành fetch data
-    fetchProducts();
-    fetchCategories();
-
-  }, [user, isAdmin, isLoading, navigate]); // Dependencies đảm bảo chạy khi trạng thái thay đổi
-
   const fetchProducts = async () => {
+    if (!API_URL) {
+      console.error("Lỗi: API_URL chưa được định nghĩa.");
+      return;
+    }
+
     try {
-      // Kiểm tra API_URL để tránh lỗi nếu biến môi trường bị thiếu
-      if (!API_URL) throw new Error("API_URL is not defined.");
-      
       const res = await axios.get<Product[]>(`${API_URL}/api/products`);
       
-      // ✅ FIX: Đảm bảo dữ liệu nhận được là mảng. Bắt buộc dùng mảng rỗng nếu không phải.
       const data = (res.data && Array.isArray(res.data)) ? res.data : [];
       setProducts(data);
     } catch (err) {
       console.error("Lỗi tải sản phẩm:", err);
-      // Đảm bảo products là mảng rỗng khi có lỗi mạng/server
       setProducts([]); 
     }
   };
 
   const fetchCategories = async () => {
+    if (!API_URL) return;
+
     try {
-      if (!API_URL) throw new Error("API_URL is not defined.");
       const res = await axios.get<Category[]>(`${API_URL}/api/categories`);
       setCategories(res.data);
     } catch (err) {
@@ -121,7 +105,21 @@ const AdminProductPage: React.FC = () => {
     }
   };
   
-  // --- LOGIC FORM ---
+  useEffect(() => {
+    if (isLoading) return; 
+
+    if (!user || !isAdmin) {
+      navigate("/"); 
+      return; 
+    }
+    
+    fetchProducts();
+    fetchCategories();
+
+  }, [user, isAdmin, isLoading, navigate]);
+
+  
+  // --- FORM HANDLERS ---
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -131,71 +129,74 @@ const AdminProductPage: React.FC = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      // Chuyển đổi giá và tồn kho sang dạng số
       [name]: name === "price" || name === "stock" ? Number(value) : value,
     }));
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    // Đảm bảo rằng giá trị rỗng ("") được lưu là null
     setFormData((prev) => ({
       ...prev,
       categoryId: value === "" ? null : Number(value),
     }));
   };
 
-  const handleEditClick = (product: Product) => {
-    setEditing(true);
-    setFormData({
-      ...product,
-      // Đảm bảo categoryId được xử lý đúng kiểu null/number
-      categoryId: product.categoryId === undefined ? null : product.categoryId, 
+  const handleSubImgUrlChange = (index: number, value: string) => {
+    setSubImgUrls(prev => {
+      const newUrls = [...prev];
+      newUrls[index] = value;
+      return newUrls;
     });
-    const subs = product.subImages || [];
-    setSubImg1(subs[0] || "");
-    setSubImg2(subs[1] || "");
-    setSubImg3(subs[2] || "");
-    setSubImg4(subs[3] || "");
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const resetForm = () => {
     setEditing(false);
+    setFormData(initialFormData);
+    setSubImgUrls(["", "", "", ""]); 
+  };
+
+  const handleEditClick = (product: Product) => {
+    setEditing(true);
+    
+    const subs = product.subImages || [];
+    
     setFormData({
-      id: 0,
-      name: "",
-      price: 0,
-      stock: 0,
-      description: "",
-      image: "",
-      subImages: [],
-      sku: "",
-      dimensions: "",
-      weight: "",
-      material: "",
-      origin: "",
-      availability: "Sẵn hàng",
-      story: "",
-      categoryId: null,
+      ...product,
+      categoryId: product.categoryId || null, 
+      subImages: subs, 
     });
-    setSubImg1("");
-    setSubImg2("");
-    setSubImg3("");
-    setSubImg4("");
+
+    setSubImgUrls([
+      subs[0] || "",
+      subs[1] || "",
+      subs[2] || "",
+      subs[3] || ""
+    ]);
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSubmit = async () => {
     const token = localStorage.getItem("token");
-    const subImages = [subImg1, subImg2, subImg3, subImg4].filter(
-      (img) => img.trim() !== ""
-    );
+    if (!token) {
+        alert("❌ Lỗi xác thực: Không tìm thấy Token.");
+        return;
+    }
+    if (!API_URL) return;
+
+    const finalSubImages = subImgUrls.filter((img) => img.trim() !== "");
 
     const payload = {
       ...formData,
-      subImages,
-      categoryId: formData.categoryId === "" ? null : formData.categoryId,
+      subImages: finalSubImages,
+      categoryId: formData.categoryId,
     };
+    
+    if (!payload.name || !payload.image || payload.price <= 0) {
+        alert("❌ Vui lòng điền đủ Tên sản phẩm, Ảnh chính và Giá.");
+        return;
+    }
+
 
     try {
       if (editing) {
@@ -212,8 +213,15 @@ const AdminProductPage: React.FC = () => {
       resetForm();
       fetchProducts();
     } catch (err) {
-      console.error(err);
-      alert("❌ Có lỗi xảy ra! Vui lòng kiểm tra các trường bắt buộc.");
+      console.error("Lỗi gửi/cập nhật sản phẩm:", err);
+      
+      // Sử dụng Type Guard của Axios (cần đảm bảo Axios version mới)
+      if (axios.isAxiosError(err) && (err as AxiosError).response) { 
+         const serverError = (err as AxiosError).response?.data as any;
+         alert(`❌ Có lỗi xảy ra! Lỗi Server: ${serverError?.message || (err as AxiosError).response?.statusText}`);
+      } else {
+         alert("❌ Có lỗi xảy ra! Vui lòng kiểm tra console.");
+      }
     }
   };
 
@@ -224,21 +232,25 @@ const AdminProductPage: React.FC = () => {
       )
     )
       return;
+    
+    const token = localStorage.getItem("token");
+    if (!token || !API_URL) return;
+
     try {
       await axios.delete(`${API_URL}/api/products/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
       alert("Đã xóa sản phẩm thành công!");
       fetchProducts();
     } catch (e) {
       console.error(e);
-      alert("Lỗi xóa sản phẩm!");
+      alert("Lỗi xóa sản phẩm! Vui lòng kiểm tra lại quyền.");
     }
   };
 
+
   // --- RENDER ---
   
-  // Hiển thị trạng thái tải trong lúc Auth Context đang kiểm tra
   if (isLoading) return <div className="p-10 text-center">Đang kiểm tra quyền truy cập...</div>;
 
   return (
@@ -287,7 +299,7 @@ const AdminProductPage: React.FC = () => {
 
             <div className="row-2">
               <div>
-                <label>Giá (VNĐ)</label>
+                <label>Giá (VNĐ) (*)</label>
                 <input
                   type="number"
                   name="price"
@@ -311,9 +323,8 @@ const AdminProductPage: React.FC = () => {
               <label>Danh mục sản phẩm</label>
               <select
                 name="categoryId"
-                // Hiển thị null là chuỗi rỗng để chọn option "Không phân loại"
                 value={formData.categoryId === null ? "" : formData.categoryId} 
-                onChange={handleCategoryChange} 
+                onChange={handleCategoryChange}
               >
                 <option value="">-- Không phân loại --</option>
                 {categories.map((cat) => (
@@ -339,35 +350,23 @@ const AdminProductPage: React.FC = () => {
                 name="image"
                 value={formData.image}
                 onChange={handleChange}
-                placeholder="/public/images/abc.jpg"
+                placeholder="https://images.example.com/main.jpg"
               />
               <label className="icon-label">
-                <IconImage />
+                <IconImage /> {/* Đã sử dụng alias đã FIX kiểu */}
               </label>
             </div>
 
             <label>Ảnh phụ (Gallery)</label>
             <div className="sub-images-grid">
-              <input
-                placeholder="Ảnh phụ 1"
-                value={subImg1}
-                onChange={(e) => setSubImg1(e.target.value)}
-              />
-              <input
-                placeholder="Ảnh phụ 2"
-                value={subImg2}
-                onChange={(e) => setSubImg2(e.target.value)}
-              />
-              <input
-                placeholder="Ảnh phụ 3"
-                value={subImg3}
-                onChange={(e) => setSubImg3(e.target.value)}
-              />
-              <input
-                placeholder="Ảnh phụ 4"
-                value={subImg4}
-                onChange={(e) => setSubImg4(e.target.value)}
-              />
+              {subImgUrls.map((url, index) => (
+                <input
+                  key={index}
+                  placeholder={`Ảnh phụ ${index + 1}`}
+                  value={url}
+                  onChange={(e) => handleSubImgUrlChange(index, e.target.value)}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -380,19 +379,19 @@ const AdminProductPage: React.FC = () => {
               name="dimensions"
               value={formData.dimensions || ""}
               onChange={handleChange}
-              placeholder="Kích thước"
+              placeholder="Kích thước (ví dụ: D10 x H15 cm)"
             />
             <input
               name="weight"
               value={formData.weight || ""}
               onChange={handleChange}
-              placeholder="Trọng lượng"
+              placeholder="Trọng lượng (ví dụ: 1.2 kg)"
             />
             <input
               name="material"
               value={formData.material || ""}
               onChange={handleChange}
-              placeholder="Chất liệu"
+              placeholder="Chất liệu (ví dụ: Gốm sứ Bát Tràng)"
             />
             <input
               name="origin"
@@ -434,7 +433,6 @@ const AdminProductPage: React.FC = () => {
 
       {/* --- PHẦN DANH SÁCH SẢN PHẨM --- */}
       <div className="product-list-section">
-        <div className="product-list"></div>
         <div className="list-header-wrapper">
           <h3>📋 Danh sách sản phẩm ({products.length})</h3>
         </div>
@@ -450,7 +448,6 @@ const AdminProductPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {/* ✅ FIX LỖI: Kiểm tra Array.isArray(products) để chặn lỗi tuyệt đối */}
             {Array.isArray(products) && products.length > 0 ? (
               products.map((p) => (
                 <tr key={p.id}>
@@ -477,13 +474,13 @@ const AdminProductPage: React.FC = () => {
                       className="edit-btn"
                       onClick={() => handleEditClick(p)}
                     >
-                      <IconEdit />
+                      <IconEdit /> {/* Đã sử dụng alias đã FIX kiểu */}
                     </button>
                     <button
                       className="delete-btn"
                       onClick={() => handleDelete(p.id)}
                     >
-                      <IconTrash />
+                      <IconTrash /> {/* Đã sử dụng alias đã FIX kiểu */}
                     </button>
                   </td>
                 </tr>
@@ -491,7 +488,6 @@ const AdminProductPage: React.FC = () => {
             ) : (
               <tr>
                 <td colSpan={5} className="text-center p-4">
-                  {/* Hiển thị thông báo khi không có sản phẩm sau khi tải xong */}
                   {products.length === 0
                     ? "Không có sản phẩm nào được tìm thấy."
                     : "Đang tải dữ liệu sản phẩm..."}
