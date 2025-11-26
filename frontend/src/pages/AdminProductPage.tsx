@@ -2,14 +2,18 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { FaImage, FaEdit, FaTrash } from "react-icons/fa";
-import { useAuth } from "../context/AuthContext";
+// Giả định đường dẫn đến Context xác thực của bạn là đúng
+import { useAuth } from "../context/AuthContext"; 
 import "../styles/AdminProduct.css";
 
+// Đảm bảo biến môi trường này được định nghĩa chính xác
 const API_URL = process.env.REACT_APP_API_URL;
 
 const IconImage = FaImage as unknown as React.FC;
 const IconEdit = FaEdit as unknown as React.FC;
 const IconTrash = FaTrash as unknown as React.FC;
+
+// --- INTERFACES ---
 
 interface Category {
   id: number;
@@ -31,14 +35,18 @@ interface Product {
   origin?: string;
   availability?: string;
   story?: string;
-  categoryId?: number | string | null;
+  // Cho phép categoryId là null (không có danh mục)
+  categoryId: number | string | null; 
   category?: Category;
 }
+
+// --- COMPONENT ---
 
 const AdminProductPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAdmin, isLoading } = useAuth();
 
+  // Khởi tạo products LUÔN LÀ MẢNG rỗng để ngăn lỗi .map
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -57,7 +65,7 @@ const AdminProductPage: React.FC = () => {
     origin: "",
     availability: "Sẵn hàng",
     story: "",
-    categoryId: "",
+    categoryId: null, // Khởi tạo là null
   });
 
   const [subImg1, setSubImg1] = useState("");
@@ -66,36 +74,54 @@ const AdminProductPage: React.FC = () => {
   const [subImg4, setSubImg4] = useState("");
 
   const [editing, setEditing] = useState<boolean>(false);
-
+  
+  // --- LOGIC XÁC THỰC VÀ FETCH DATA ---
+  
   useEffect(() => {
-    if (!isLoading) {
-      if (!user || !isAdmin) {
-        navigate("/");
-      } else {
-        fetchProducts();
-        fetchCategories();
-      }
+    // 1. Nếu Auth Context vẫn đang tải, chờ đợi
+    if (isLoading) return;
+
+    // 2. Kiểm tra xác thực/phân quyền: Nếu không phải Admin, chuyển hướng
+    if (!user || !isAdmin) {
+      // Chuyển hướng ngay lập tức và dừng lại
+      navigate("/"); 
+      return; 
     }
-  }, [user, isAdmin, isLoading, navigate]);
+    
+    // 3. Nếu là Admin và đã tải xong, tiến hành fetch data
+    fetchProducts();
+    fetchCategories();
+
+  }, [user, isAdmin, isLoading, navigate]); // Dependencies đảm bảo chạy khi trạng thái thay đổi
 
   const fetchProducts = async () => {
     try {
-      // ✅ Yêu cầu backend include cả category
+      // Kiểm tra API_URL để tránh lỗi nếu biến môi trường bị thiếu
+      if (!API_URL) throw new Error("API_URL is not defined.");
+      
       const res = await axios.get<Product[]>(`${API_URL}/api/products`);
-      setProducts(Array.isArray(res.data) ? res.data : []);
+      
+      // ✅ FIX: Đảm bảo dữ liệu nhận được là mảng. Bắt buộc dùng mảng rỗng nếu không phải.
+      const data = (res.data && Array.isArray(res.data)) ? res.data : [];
+      setProducts(data);
     } catch (err) {
       console.error("Lỗi tải sản phẩm:", err);
+      // Đảm bảo products là mảng rỗng khi có lỗi mạng/server
+      setProducts([]); 
     }
   };
 
   const fetchCategories = async () => {
     try {
+      if (!API_URL) throw new Error("API_URL is not defined.");
       const res = await axios.get<Category[]>(`${API_URL}/api/categories`);
       setCategories(res.data);
     } catch (err) {
       console.error("Lỗi tải danh mục:", err);
     }
   };
+  
+  // --- LOGIC FORM ---
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -105,12 +131,14 @@ const AdminProductPage: React.FC = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
+      // Chuyển đổi giá và tồn kho sang dạng số
       [name]: name === "price" || name === "stock" ? Number(value) : value,
     }));
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
+    // Đảm bảo rằng giá trị rỗng ("") được lưu là null
     setFormData((prev) => ({
       ...prev,
       categoryId: value === "" ? null : Number(value),
@@ -121,7 +149,8 @@ const AdminProductPage: React.FC = () => {
     setEditing(true);
     setFormData({
       ...product,
-      categoryId: product.categoryId || null, // Đảm bảo không bị null
+      // Đảm bảo categoryId được xử lý đúng kiểu null/number
+      categoryId: product.categoryId === undefined ? null : product.categoryId, 
     });
     const subs = product.subImages || [];
     setSubImg1(subs[0] || "");
@@ -162,11 +191,9 @@ const AdminProductPage: React.FC = () => {
       (img) => img.trim() !== ""
     );
 
-    // Chuẩn bị payload
     const payload = {
       ...formData,
       subImages,
-      // Đảm bảo categoryId là số hoặc null
       categoryId: formData.categoryId === "" ? null : formData.categoryId,
     };
 
@@ -209,7 +236,10 @@ const AdminProductPage: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div className="p-10 text-center">Đang tải...</div>;
+  // --- RENDER ---
+  
+  // Hiển thị trạng thái tải trong lúc Auth Context đang kiểm tra
+  if (isLoading) return <div className="p-10 text-center">Đang kiểm tra quyền truy cập...</div>;
 
   return (
     <div className="admin-page">
@@ -281,8 +311,9 @@ const AdminProductPage: React.FC = () => {
               <label>Danh mục sản phẩm</label>
               <select
                 name="categoryId"
-                value={formData.categoryId || ""}
-                onChange={handleCategoryChange} // ✅ Dùng hàm handleCategoryChange
+                // Hiển thị null là chuỗi rỗng để chọn option "Không phân loại"
+                value={formData.categoryId === null ? "" : formData.categoryId} 
+                onChange={handleCategoryChange} 
               >
                 <option value="">-- Không phân loại --</option>
                 {categories.map((cat) => (
@@ -401,15 +432,13 @@ const AdminProductPage: React.FC = () => {
         </div>
       </div>
 
-      {/* --- PHẦN DANH SÁCH SẢN PHẨM (ĐÃ CHỈNH SỬA) --- */}
+      {/* --- PHẦN DANH SÁCH SẢN PHẨM --- */}
       <div className="product-list-section">
         <div className="product-list"></div>
-        {/* TIÊU ĐỀ - NẰM TRÊN CÙNG */}
         <div className="list-header-wrapper">
           <h3>📋 Danh sách sản phẩm ({products.length})</h3>
         </div>
 
-        {/* BẢNG - NẰM DƯỚI TIÊU ĐỀ */}
         <table className="product-table">
           <thead>
             <tr>
@@ -421,42 +450,54 @@ const AdminProductPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {products.map((p) => (
-              <tr key={p.id}>
-                <td>
-                  <img src={p.image} alt={p.name} className="table-img" />
-                </td>
-                <td>
-                  <strong>{p.name}</strong>
-                  <br />
-                  <small className="sku-text">{p.sku || "---"}</small>
-                </td>
-                <td>
-                  <span className="category-badge">
-                    {p.category?.name || "Chưa phân loại"}
-                  </span>
-                </td>
-                <td>
-                  {p.price.toLocaleString()} đ
-                  <br />
-                  <small>Kho: {p.stock}</small>
-                </td>
-                <td className="action-buttons">
-                  <button
-                    className="edit-btn"
-                    onClick={() => handleEditClick(p)}
-                  >
-                    <IconEdit />
-                  </button>
-                  <button
-                    className="delete-btn"
-                    onClick={() => handleDelete(p.id)}
-                  >
-                    <IconTrash />
-                  </button>
+            {/* ✅ FIX LỖI: Kiểm tra Array.isArray(products) để chặn lỗi tuyệt đối */}
+            {Array.isArray(products) && products.length > 0 ? (
+              products.map((p) => (
+                <tr key={p.id}>
+                  <td>
+                    <img src={p.image} alt={p.name} className="table-img" />
+                  </td>
+                  <td>
+                    <strong>{p.name}</strong>
+                    <br />
+                    <small className="sku-text">{p.sku || "---"}</small>
+                  </td>
+                  <td>
+                    <span className="category-badge">
+                      {p.category?.name || "Chưa phân loại"}
+                    </span>
+                  </td>
+                  <td>
+                    {p.price.toLocaleString()} đ
+                    <br />
+                    <small>Kho: {p.stock}</small>
+                  </td>
+                  <td className="action-buttons">
+                    <button
+                      className="edit-btn"
+                      onClick={() => handleEditClick(p)}
+                    >
+                      <IconEdit />
+                    </button>
+                    <button
+                      className="delete-btn"
+                      onClick={() => handleDelete(p.id)}
+                    >
+                      <IconTrash />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className="text-center p-4">
+                  {/* Hiển thị thông báo khi không có sản phẩm sau khi tải xong */}
+                  {products.length === 0
+                    ? "Không có sản phẩm nào được tìm thấy."
+                    : "Đang tải dữ liệu sản phẩm..."}
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

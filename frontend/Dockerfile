@@ -15,6 +15,8 @@ COPY . .
 
 # 3. Build the static assets
 # Thay thế "npm run build" bằng lệnh build phù hợp nếu cần (ví dụ: yarn build)
+
+RUN echo "Debug API URL: $REACT_APP_API_URL"
 RUN npm run build 
 
 # ===============================

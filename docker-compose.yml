@@ -1,70 +1,66 @@
-version: "3.9"
+version: '3.8'
 
 services:
-  # ========================
-  # 🗄️ PostgreSQL Database
-  # ========================
+  # --------------------
+  # 1. DATABASE SERVICE
+  # --------------------
   db:
-    image: postgres:14
+    image: postgres:14-alpine
+    container_name: pottery-db-1
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: pottery
-    ports:
-      - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data/
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
+    ports:
+      - "5432:5432" # Để truy cập DB từ host (ví dụ: DBeaver, Prisma Studio)
 
-  # ========================
-  # ⚙️ Backend (Node + Express) - Production Setup
-  # ========================
+  # --------------------
+  # 2. BACKEND SERVICE (Node.js/Express API)
+  # --------------------
   backend:
-    # Build image từ thư mục backend
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: pottery-backend-1
     restart: always
-
-    # Sử dụng env_file (nếu cần thiết cho biến môi trường khác)
+    # FIX: Khai báo rõ ràng file .env để load biến môi trường vào container
     env_file:
-      - ./backend/.env
-
-    # Kết nối DB trong mạng nội bộ Docker
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/pottery?schema=public
-      # Thêm biến môi trường cho môi trường Production (Nếu cần)
-      - NODE_ENV=production
-
+      - .env
     depends_on:
       db:
         condition: service_healthy
-
-    # Ánh xạ cổng ra Host để Nginx có thể truy cập (103.77.240.74:5000)
     ports:
       - "5000:5000"
-
-    # ⚠️ CHỈ GIỮ CÁC VOLUME CHO DỮ LIỆU CẦN LƯU TRỮ (ví dụ: ảnh upload, log)
-    # ⚠️ ĐÃ LOẠI BỎ VOLUME ĐỒNG BỘ MÃ NGUỒN (./backend:/app)
+      - "5555:5555"
     volumes:
-      # Lưu ảnh render, upload, assets ra ngoài host để dễ xem và persistent
-      - ./backend/public:/app/public
-      - ./backend/src/assets:/app/src/assets
+      - ./backend:/app
+      # Tránh mount node_modules từ host
+      - /app/node_modules
 
-    # Lệnh khởi động (Bỏ npm run build vì nó đã được chạy trong Dockerfile Stage 1)
-    command: >
-      sh -c "
-        npx prisma migrate deploy && 
-        node dist/server.js
-      "
+  # --------------------
+  # 3. FRONTEND SERVICE (React/Nginx)
+  # --------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pottery-frontend-1
+    restart: always
+    # FIX: Truyền biến API URL vào Frontend (dù đã có fallback)
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
 
-# ========================
-# 💾 Volumes
-# ========================
 volumes:
-  pgdata:
+  postgres_data:

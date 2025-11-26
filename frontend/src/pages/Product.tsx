@@ -6,8 +6,7 @@ import { useCart } from "../context/CartContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/Product.css";
 
-const API_URL = process.env.REACT_APP_API_URL || "";
-
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 interface Product {
   id: number;
   name: string;

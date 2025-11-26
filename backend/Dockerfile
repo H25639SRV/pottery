@@ -1,70 +1,56 @@
-# ===============================
-# 🧱 STAGE 1: Builder
-# ===============================
-# Dùng Node 20 cho cả 2 stage để tránh lỗi thư viện C++ (canvas/sharp)
-FROM node:20-bookworm AS builder
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# 1️⃣ Cài đặt thư viện hệ thống
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential pkg-config libcairo2-dev libpango1.0-dev \
-    libjpeg-dev libgif-dev librsvg2-dev libpng-dev openssl \
-    && rm -rf /var/lib/apt/lists/*
+# =========================================================================
+# STAGE 1: BUILD (Chứa công cụ biên dịch và Node Modules)
+#
+# Lớp này chỉ bị rebuild nếu:
+# 1. Base image thay đổi.
+# 2. package*.json thay đổi.
+# =========================================================================
+# 1. Cài đặt các gói BUILD/DEV cần thiết (QUAN TRỌNG: Phải chạy trước npm install).
+RUN apk update && \
+    apk add --no-cache python3 make g++ gcc cairo-dev jpeg-dev pango-dev giflib-dev && \
+    rm -rf /var/cache/apk/*
 
-# 2️⃣ Copy package files
+# 2. Copy dependencies và cài đặt (lớp này tái sử dụng cache nếu package*.json không đổi)
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
-# 3️⃣ Copy source
-COPY prisma ./prisma
-COPY tsconfig.json .
-COPY src ./src
-
-# Tạo thư mục template
-RUN mkdir -p /app/public/templates
-COPY src/assets/render.png /app/public/templates/render.png
-
-# 4️⃣ Build
+# 3. Copy Prisma schema và tạo Client (đảm bảo file client được tạo)
+COPY prisma ./prisma/
 RUN npx prisma generate --schema=./prisma/schema.prisma
-RUN npm run build
 
-# 🔥 TỐI ƯU: Xóa thư viện dev và Nén node_modules để copy nhanh hơn
-RUN npm prune --production
-RUN tar -cf node_modules.tar node_modules
+# 4. Copy mã nguồn và Build TypeScript (chỉ chạy lại khi mã nguồn thay đổi)
+COPY . .
+RUN npm run build 
 
 # ===============================
-# 🏃 STAGE 2: Runtime
+# 🏃 STAGE 2: Runtime (Image cuối cùng)
 # ===============================
-FROM node:20-slim AS runner
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Cài đặt thư viện Runtime
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl \
-    libcairo2 libpango-1.0-0 libpangocairo-1.0-0 \
-    libgif7 librsvg2-2 \
-    fontconfig fonts-dejavu-core \
-    && rm -rf /var/lib/apt/lists/*
+# ⚠️ BƯỚC QUAN TRỌNG: Cài đặt các thư viện chia sẻ (shared libraries) 
+# như libcairo.so.2 cần thiết cho 'canvas' hoạt động trong Runtime Stage.
+# Các thư viện này không có trong image node:20-alpine cơ bản.
+RUN apk update && \
+    apk add --no-cache cairo jpeg pango giflib && \
+    rm -rf /var/cache/apk/*
 
-# Tạo thư mục output
-RUN mkdir -p /app/public/uploads /app/public/render_output
+# Copy built code
+COPY --from=build /app/dist ./dist
 
-# Copy file package.json
-COPY --from=builder /app/package*.json ./
+# Copy node_modules (đã được biên dịch ở Stage 1)
+COPY --from=build /app/node_modules ./node_modules
 
-# 🔥 COPY FILE NÉN
-COPY --from=builder /app/node_modules.tar ./
-# Giải nén và xóa file tar
-RUN tar -xf node_modules.tar && rm node_modules.tar
+# Copy thư mục prisma (cần cho migration)
+COPY --from=build /app/prisma ./prisma
 
-# Copy các phần còn lại
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/public ./public
-
+# Expose port
 EXPOSE 5000
 
-# Lệnh CMD đơn giản (chỉ chạy server), migration sẽ được xử lý bởi docker-compose command
-CMD ["node", "dist/server.js"]
+# 🚀 LỆNH KHỞI ĐỘNG CUỐI CÙNG
+CMD [ "/bin/sh", "-c", "npx prisma migrate deploy --schema=prisma/schema.prisma && node dist/server.js" ]
