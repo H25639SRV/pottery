@@ -12,6 +12,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: pottery
+
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     healthcheck:
@@ -57,6 +58,8 @@ services:
     # FIX: Truyền biến API URL vào Frontend (dù đã có fallback)
     environment:
       - REACT_APP_API_URL=http://localhost:5000
+      - REACT_APP_CLIENT_URL=http://localhost:3000
+      - REACT_APP_CHAT_API_URL=http://103.77.240.74/socket.io
     depends_on:
       - backend
     ports:
