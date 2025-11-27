@@ -32,7 +32,7 @@ services:
     restart: always
     # FIX: Khai báo rõ ràng file .env để load biến môi trường vào container
     env_file:
-      - .env
+      - backend/.env
     depends_on:
       db:
         condition: service_healthy
