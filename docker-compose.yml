@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # --------------------
   # 1. DATABASE SERVICE
@@ -41,11 +39,6 @@ services:
     ports:
       - "5000:5000"
       - "5555:5555"
-    volumes:
-      - ./backend:/app
-      # Tránh mount node_modules từ host
-      - /app/node_modules
-
   # --------------------
   # 3. FRONTEND SERVICE (React/Nginx)
   # --------------------
