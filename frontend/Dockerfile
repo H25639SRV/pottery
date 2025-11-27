@@ -5,6 +5,16 @@ FROM node:20-alpine AS frontend_builder
 
 WORKDIR /app
 
+# Khai báo ARG để nhận giá trị từ docker-compose
+ARG REACT_APP_API_URL
+ARG REACT_APP_CLIENT_URL
+ARG REACT_APP_CHAT_API_URL
+
+# Chuyển ARG thành ENV để React đọc được
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV REACT_APP_CLIENT_URL=$REACT_APP_CLIENT_URL
+ENV REACT_APP_CHAT_API_URL=$REACT_APP_CHAT_API_URL
+
 # 1. Copy package files and install dependencies
 # Giả định package.json của frontend nằm trong thư mục frontend/
 COPY package*.json ./
