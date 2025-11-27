@@ -163,21 +163,34 @@ export const renderPattern = async (req: Request, res: Response) => {
 
     // 🔑 LOGIC: Ưu tiên xử lý Sticker
     if (stickerPath) {
-      // --- Xử lý Sticker ---
-      const filename = path.basename(stickerPath);
-      const fullStickerPath = path.join(STICKER_DIR, filename);
+      // --- Xử lý Sticker từ URL ---
+      try {
+        console.log(`🌐 Tải sticker từ URL: https://raw.githubusercontent.com/H25639SRV/pottery/refs/heads/main/backend/public/sticker/${stickerPath}`);
 
-      if (!fs.existsSync(fullStickerPath)) {
-        console.error(`❌ Không tìm thấy sticker: ${fullStickerPath}`);
-        return res
-          .status(404)
-          .json({ error: `Không tìm thấy sticker: ${filename}` });
+        const response = await fetch(`https://raw.githubusercontent.com/H25639SRV/pottery/refs/heads/main/backend/public/sticker/${stickerPath}`);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        patternBuffer = Buffer.from(arrayBuffer);
+
+        // Lấy tên file từ URL
+        try {
+          patternFileName = path.basename(stickerPath) || "sticker.png";
+        } catch {
+          patternFileName = "sticker.png";
+        }
+
+        fileSource = "Sticker (URL)";
+        console.log(`✅ Đã tải sticker từ URL: ${stickerPath}`);
+      } catch (stickerError: any) {
+        console.error(`❌ Lỗi tải sticker:`, stickerError);
+        return res.status(400).json({
+          error: `Không thể tải sticker: ${stickerError.message}`,
+        });
       }
-
-      patternFileName = filename;
-      patternBuffer = fs.readFileSync(fullStickerPath);
-      fileSource = "Sticker";
-      console.log(`💿 Đọc sticker từ disk: ${fullStickerPath}`);
     } else if (patternFile) {
       // --- Xử lý File Upload ---
       patternFileName = patternFile.originalname || "unknown_pattern.png";
@@ -205,16 +218,17 @@ export const renderPattern = async (req: Request, res: Response) => {
       console.log(`💿 Đọc file tạm từ disk: ${tempFilePath}`);
       patternBuffer = fs.readFileSync(tempFilePath);
     } else {
-      // Nếu không có cả stickerPath và patternFile, mới trả về lỗi
       return res.status(400).json({ error: "Thiếu hoa văn hoặc sticker" });
     }
 
-    const templatePath = path.join(TEMPLATE_DIR, templateName);
+    // const templatePath = path.join(TEMPLATE_DIR, templateName);
+    const templatePath =
+      "https://raw.githubusercontent.com/H25639SRV/pottery/refs/heads/main/backend/public/templates/render.png";
 
-    if (!fs.existsSync(templatePath)) {
-      console.error(`❌ Không tìm thấy ảnh template: ${templatePath}`);
-      return res.status(404).json({ error: "Không tìm thấy ảnh template" });
-    }
+    // if (!fs.existsSync(templatePath)) {
+    //   console.error(`❌ Không tìm thấy ảnh template: ${templatePath}`);
+    //   return res.status(404).json({ error: "Không tìm thấy ảnh template" });
+    // }
 
     console.log(
       "🎨 Bắt đầu render pattern (Quy trình 100% Canvas Composite)..."

@@ -19,20 +19,14 @@ router.post("/", upload.single("pattern"), async (req, res) => {
     console.log(`📂 Đã nhận pattern upload: ${file.originalname}`);
 
     // Template cố định (từ body hoặc mặc định)
-    const templateName = req.body.templateName || "render1.png";
+    const templateName = req.body.templateName || "render.png";
     const angle = req.body.angle || "front";
 
     const assetsPath = fs.existsSync(path.join(process.cwd(), "dist/assets"))
       ? path.join(process.cwd(), "dist/assets")
       : path.join(process.cwd(), "src/assets");
 
-    const templatePath = path.join(assetsPath, templateName);
-
-    if (!fs.existsSync(templatePath)) {
-      return res
-        .status(404)
-        .json({ error: `Không tìm thấy ảnh template: ${templateName}` });
-    }
+    const templatePath = "https://raw.githubusercontent.com/H25639SRV/pottery/refs/heads/main/backend/public/templates/render.png";
 
     // Gắn vào req.body
     req.body.patternBase64 = patternBase64;

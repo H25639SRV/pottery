@@ -92,7 +92,6 @@ const TryPatternPage: React.FC = () => {
     try {
       setLoading((prev) => ({ ...prev, [id]: true }));
       setProgress((prev) => ({ ...prev, [id]: 0 }));
-
       const res = await axios.post<RenderResponse>(
         `${API_URL}/api/render`,
         formData,
@@ -211,7 +210,7 @@ const TryPatternPage: React.FC = () => {
   };
 
   const getStickerImageUrl = (path: string) => {
-    return `${API_URL}/public/${path}`;
+    return `https://raw.githubusercontent.com/H25639SRV/pottery/refs/heads/main/backend/public/${path}`;
   };
 
   return (
