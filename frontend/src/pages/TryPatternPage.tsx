@@ -50,7 +50,7 @@ const TryPatternPage: React.FC = () => {
       id: 1,
       name: "Bình gốm trụ",
       templateName: "render.png",
-      basePath: `${API_URL}/public/templates/render.png`,
+      basePath: "https://raw.githubusercontent.com/H25639SRV/pottery/refs/heads/main/backend/public/templates/render.png",
     },
   ];
 
