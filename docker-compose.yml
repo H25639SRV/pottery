@@ -49,14 +49,14 @@ services:
       args:
       - REACT_APP_API_URL=http://103.77.240.74:5000
       - REACT_APP_CLIENT_URL=http://103.77.240.74:3000
-      - REACT_APP_CHAT_API_URL=http://103.77.240.74/socket.io
+      - REACT_APP_CHAT_API_URL=http://103.77.240.74:8080
     container_name: pottery-frontend-1
     restart: always
     # FIX: Truyền biến API URL vào Frontend (dù đã có fallback)
     environment:
       - REACT_APP_API_URL=http://103.77.240.74:5000
       - REACT_APP_CLIENT_URL=http://103.77.240.74:3000
-      - REACT_APP_CHAT_API_URL=http://103.77.240.74/socket.io
+      - REACT_APP_CHAT_API_URL=http://103.77.240.74:8080
     depends_on:
       - backend
     ports:
