@@ -114,7 +114,7 @@ const ProductDetail: React.FC = () => {
       // 1. Chuẩn hóa data.image (loại bỏ dấu "/" ở đầu)
       const normalizedImage = normalizeImagePath(data.image);
       // 2. Nối chuỗi an toàn: [URL_GỐC] + "/" + [ĐƯỜNG DẪN ĐÃ CHUẨN HÓA]
-      setActiveImage(API_URL + "/" + normalizedImage);
+      setActiveImage(CLIENT_URL + "/" + normalizedImage);
 
       // Xử lý ảnh
       processImages(data);
@@ -143,7 +143,7 @@ const ProductDetail: React.FC = () => {
     // Nếu ảnh đang xem bị lỗi, quay về ảnh gốc (Đã được chuẩn hóa)
     if (activeImage === imgUrl && product) {
       const normalizedImage = normalizeImagePath(product.image);
-      setActiveImage(API_URL + "/" + normalizedImage);
+      setActiveImage(CLIENT_URL + "/" + normalizedImage);
     }
   };
 
