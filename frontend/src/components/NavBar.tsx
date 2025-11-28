@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaSearch, FaUser, FaShoppingCart } from "react-icons/fa";
-import axios from "axios"; // 👈 Thêm axios để gọi API
+import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import "../styles/NavBar.css";
@@ -10,7 +10,7 @@ import "../styles/NavBar.css";
 interface Category {
   id: number;
   name: string;
-  slug: string; // Tùy chọn, nếu bạn dùng slug thay vì ID
+  slug: string;
 }
 // --------------------
 
@@ -26,13 +26,12 @@ const Navbar: React.FC = () => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showProductDropdown, setShowProductDropdown] = useState(false);
 
-  // 👈 STATE MỚI: Lưu trữ danh sách categories
   const [categories, setCategories] = useState<Category[]>([]);
 
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
   const userDropdownRef = useRef<HTMLDivElement>(null);
-  const productDropdownRef = useRef<HTMLDivElement>(null);
+  const productDropdownRef = useRef<HTMLDivElement>(null); // ✅ ĐÃ CÓ REF
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const username = user?.username || "Khách";
@@ -43,12 +42,10 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        // 🚨 Điều chỉnh endpoint API này cho phù hợp với Backend của bạn
         const res = await axios.get<Category[]>(`${API_URL}/api/categories`);
         setCategories(res.data);
       } catch (error) {
         console.error("Lỗi khi tải categories:", error);
-        // Fallback: Giữ nguyên categories tĩnh nếu API lỗi
         setCategories([
           { id: 1, name: "Dáng Việt", slug: "dang-viet" },
           { id: 2, name: "Âm vang di sản", slug: "am-vang-di-san" },
@@ -56,20 +53,32 @@ const Navbar: React.FC = () => {
       }
     };
     fetchCategories();
-  }, []); // Chỉ chạy 1 lần khi component mount
+  }, []);
 
+  // --- EFFECT KHẮC PHỤC THIẾU SÓT: Xử lý click ra ngoài cho cả hai dropdown ---
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      // Logic cho User Dropdown
       if (
         userDropdownRef.current &&
         !userDropdownRef.current.contains(e.target as Node)
       ) {
         setShowUserDropdown(false);
       }
+      
+      // ✅ BỔ SUNG LOGIC CHO PRODUCT DROPDOWN
+      if (
+        productDropdownRef.current &&
+        !productDropdownRef.current.contains(e.target as Node)
+      ) {
+        // Chỉ đóng nếu không phải do hover, để tránh xung đột với onMouseLeave/onMouseEnter
+        if (!showProductDropdown) return;
+        setShowProductDropdown(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [showProductDropdown]); // Dependency để cập nhật trạng thái đóng chính xác
 
   const handleLogout = () => {
     logout();
@@ -79,7 +88,6 @@ const Navbar: React.FC = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      // 👈 THÊM: Sử dụng tham số `sort` để báo hiệu cần sort theo tìm kiếm
       navigate(
         `/product?query=${encodeURIComponent(query.trim())}&sort=relevance`
       );
@@ -87,10 +95,14 @@ const Navbar: React.FC = () => {
     }
   };
 
-  // 👈 HÀM XỬ LÝ KHI CLICK VÀO CATEGORY
-  const handleCategoryClick = (categoryId: number) => {
-    // Điều hướng đến trang sản phẩm và truyền categoryId + yêu cầu sort theo category
-    navigate(`/product?category=${categoryId}&sort=category`);
+  const handleCategoryClick = (categoryId: number | 'all') => {
+    let path = '';
+    if (categoryId === 'all') {
+        path = '/product?sort=all';
+    } else {
+        path = `/product?category=${categoryId}&sort=category`;
+    }
+    navigate(path);
     setShowProductDropdown(false);
   };
 
@@ -111,31 +123,27 @@ const Navbar: React.FC = () => {
           Trang chủ
         </Link>
 
-        {/* --- DROPDOWN SẢN PHẨM (DYNAMIC) --- */}
+        {/* --- DROPDOWN SẢN PHẨM --- */}
         <div
           className="navbar-link product-dropdown-trigger"
           onMouseEnter={() => setShowProductDropdown(true)}
           onMouseLeave={() => setShowProductDropdown(false)}
           ref={productDropdownRef}
         >
-          {/* Link cơ sở, khi click sẽ đưa về trang tất cả sản phẩm */}
           <Link to="/product" className="navbar-link-base">
             Sản phẩm
           </Link>
           {showProductDropdown && (
-            <div className="dropdown-menu product-menu">
-              {/* 1. Link Tất cả sản phẩm */}
-              <Link
-                to="/product?sort=all"
-                className="dropdown-item"
-                onClick={() => setShowProductDropdown(false)}
+            <div className="dropdown-menu product-menu user-menu-options">
+              
+              <button
+                className="dropdown-item" 
+                onClick={() => handleCategoryClick('all')}
               >
                 Tất cả sản phẩm
-              </Link>
+              </button>
 
-              {/* 2. Render danh sách Category từ state */}
               {categories.map((cat) => (
-                // Thay vì dùng <Link>, dùng <button> và navigate để kiểm soát sort
                 <button
                   key={cat.id}
                   className="dropdown-item"
@@ -195,7 +203,6 @@ const Navbar: React.FC = () => {
               >
                 {isAdmin && (
                   <>
-                    {/* Nên dùng Link thay vì button bao Link, nhưng giữ cấu trúc cũ */}
                     <button className="dropdown-item">
                       <Link to="/admin/edit">Chỉnh sửa sản phẩm</Link>
                     </button>

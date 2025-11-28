@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 export const saveMessage = async (data: {
   sender: string;
   text: string;
-  roomId: string; // 🔥 THÊM: Bắt buộc phải có roomId
+  roomId: string; 
   role?: string;
 }) => {
   try {
@@ -18,7 +18,7 @@ export const saveMessage = async (data: {
       data: {
         sender: data.sender,
         text: data.text,
-        roomId: data.roomId, // 🔥 THÊM: Lưu roomId vào DB
+        roomId: data.roomId,
         role: data.role || "guest",
       },
     });

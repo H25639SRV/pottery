@@ -1,3 +1,5 @@
+/* NavBar.css */
+
 .navbar {
   display: flex;
   align-items: center;
@@ -324,19 +326,12 @@
     transform: translateY(0);
   }
 }
+
 /* ======================================= */
-/* === GHI ĐÈ STYLE ĐỂ ĐỒNG BỘ DROPDOWN === */
+/* === SỬA LỖI ĐỒNG BỘ STYLE DROPDOWN === */
 /* ======================================= */
 
-/* Đảm bảo Link bên trong dropdown-item được reset style mặc định */
-.dropdown-menu .dropdown-item a {
-  color: inherit !important;
-  text-decoration: none !important;
-  display: block !important;
-  padding: 0 !important; /* Loại bỏ padding tiềm ẩn của Link */
-}
-
-/* Đồng bộ padding và màu nền cho cả Link/Button trong mọi dropdown */
+/* Đảm bảo nội dung chữ (Link/Button) trong mọi dropdown có style giống nhau */
 .dropdown-menu .dropdown-item,
 .dropdown-menu .dropdown-button {
   /* Đảm bảo padding mới được áp dụng và đồng nhất */
@@ -344,16 +339,25 @@
   background-color: transparent !important;
   text-align: left !important;
   margin-bottom: 6px !important;
-  font-size: 0.95rem !important; /* Đồng bộ kích thước font */
+  font-size: 0.95rem !important; /* 👈 Đảm bảo font size giống nhau */
+  font-weight: 500 !important; /* 👈 Đảm bảo độ đậm giống nhau */
+  color: #fff !important; /* 👈 Đảm bảo màu chữ giống nhau */
 
   /* Reset transform */
   transform: none !important;
 }
 
+/* Bổ sung để đảm bảo thẻ <a> bên trong dropdown-item cũng nhận font style */
+.dropdown-menu .dropdown-item a {
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  color: inherit !important;
+}
+
 /* Ghi đè hiệu ứng hover */
 .dropdown-menu .dropdown-item:hover,
 .dropdown-menu .dropdown-button:hover {
-  background-color: #5d6939 !important;
+  background-color: #758449 !important;
   color: #ffddaa !important;
   transform: none !important;
 }
