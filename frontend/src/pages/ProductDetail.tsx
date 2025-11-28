@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
@@ -18,6 +18,12 @@ interface Product {
   story?: string;
 }
 
+// --- HÀM HỖ TRỢ: CHUẨN HÓA ĐƯỜNG DẪN ẢNH ---
+// Đảm bảo loại bỏ dấu gạch chéo ở đầu đường dẫn tương đối (ví dụ: "/image/x.png" -> "image/x.png")
+const normalizeImagePath = (path: string): string => {
+  return path.startsWith("/") ? path.substring(1) : path;
+};
+
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -29,34 +35,25 @@ const ProductDetail: React.FC = () => {
   const [quantity, setQuantity] = useState<number>(1);
   const [activeImage, setActiveImage] = useState<string>("");
 
-  // Danh sách ảnh gallery
   const [galleryList, setGalleryList] = useState<string[]>([]);
-  // Danh sách các ảnh bị lỗi (404) để ẩn đi
   const [errorImages, setErrorImages] = useState<Set<string>>(new Set());
 
   const productId = id ? parseInt(id) : undefined;
 
-  useEffect(() => {
-    if (productId) {
-      fetchProductDetail(productId);
-    }
-  }, [productId]);
-
   // --- HÀM 1: TỰ ĐỘNG SINH TÊN ẢNH (FALLBACK) ---
-  // Nếu ảnh chính là "/abc/xyz.png" -> sinh ra "/abc/xyz2.png", "/abc/xyz3.png"...
   const generateFallbackImages = (mainImage: string): string[] => {
     try {
-      // Tách phần mở rộng (.png, .jpg)
-      const lastDotIndex = mainImage.lastIndexOf(".");
+      // Chuẩn hóa ảnh chính trước khi sinh tên
+      const normalizedImage = normalizeImagePath(mainImage);
+      const lastDotIndex = normalizedImage.lastIndexOf(".");
       if (lastDotIndex === -1) return [];
 
-      const basePath = mainImage.substring(0, lastDotIndex); // "/image/aodai/aodai"
-      const extension = mainImage.substring(lastDotIndex); // ".png"
+      const basePath = normalizedImage.substring(0, lastDotIndex);
+      const extension = normalizedImage.substring(lastDotIndex);
 
       const fallbacks: string[] = [];
-
-      // Vòng lặp chạy từ 2 đến 5 (tổng cộng 4 ảnh phụ: 2, 3, 4, 5)
       for (let i = 2; i <= 5; i++) {
+        // Các ảnh sinh ra cũng được chuẩn hóa (không có / ở đầu)
         fallbacks.push(`${basePath}${i}${extension}`);
       }
       return fallbacks;
@@ -66,22 +63,29 @@ const ProductDetail: React.FC = () => {
   };
 
   // --- HÀM 2: XỬ LÝ DATABASE + GỘP FALLBACK ---
-  const processImages = (data: Product) => {
-    let images: string[] = [data.image];
+  const processImages = useCallback((data: Product) => {
+    // ⚠️ Ảnh chính đã được chuẩn hóa trong fetchProductDetail, nhưng ta cần dùng
+    // bản gốc (từ data.image) để sinh ảnh phụ, sau đó chuẩn hóa
+    const mainImageNormalized = normalizeImagePath(data.image);
+    let images: string[] = [mainImageNormalized];
 
-    // B1: Thử lấy từ Database trước
+    // B1: Thử lấy từ Database trước và CHUẨN HÓA
     const rawSub = data.sub_images;
     let dbImages: string[] = [];
 
     if (Array.isArray(rawSub)) {
-      dbImages = rawSub;
+      dbImages = rawSub.map(normalizeImagePath);
     } else if (typeof rawSub === "string" && rawSub.trim() !== "") {
       try {
         const validJson = rawSub.replace(/'/g, '"');
         const parsed = JSON.parse(validJson);
-        if (Array.isArray(parsed)) dbImages = parsed;
+        if (Array.isArray(parsed)) {
+          // Chuẩn hóa các đường dẫn từ JSON
+          dbImages = parsed.map(normalizeImagePath);
+        }
       } catch {
-        dbImages = [rawSub];
+        // Chuẩn hóa đường dẫn đơn lẻ
+        dbImages = [normalizeImagePath(rawSub)];
       }
     }
 
@@ -89,16 +93,15 @@ const ProductDetail: React.FC = () => {
     if (dbImages.length > 0) {
       images = [...images, ...dbImages];
     } else {
-      // Kích hoạt chế độ đoán tên file
       const guessedImages = generateFallbackImages(data.image);
       console.log("⚠️ Database trống, đang thử đoán ảnh:", guessedImages);
+      // guessedImages đã được chuẩn hóa trong generateFallbackImages
       images = [...images, ...guessedImages];
     }
 
-    // Lọc trùng
     const uniqueList = Array.from(new Set(images));
     setGalleryList(uniqueList);
-  };
+  }, []);
 
   const fetchProductDetail = async (id: number) => {
     setLoading(true);
@@ -106,7 +109,12 @@ const ProductDetail: React.FC = () => {
       const res = await axios.get<Product>(`${API_URL}/api/products/${id}`);
       const data = res.data;
       setProduct(data);
-      setActiveImage(API_URL + "/" + data.image);
+
+      // --- SỬA LỖI NỐI CHUỖI 1 ---
+      // 1. Chuẩn hóa data.image (loại bỏ dấu "/" ở đầu)
+      const normalizedImage = normalizeImagePath(data.image);
+      // 2. Nối chuỗi an toàn: [URL_GỐC] + "/" + [ĐƯỜNG DẪN ĐÃ CHUẨN HÓA]
+      setActiveImage(API_URL + "/" + normalizedImage);
 
       // Xử lý ảnh
       processImages(data);
@@ -117,19 +125,25 @@ const ProductDetail: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (productId) {
+      fetchProductDetail(productId);
+    }
+  }, [productId, processImages]);
+
   // --- HÀM 3: XỬ LÝ KHI ẢNH BỊ LỖI (404) ---
-  // Nếu đoán sai tên (file không tồn tại), hàm này sẽ ẩn ảnh đó đi
   const handleImageError = (imgUrl: string) => {
-    // console.log("Ẩn ảnh lỗi:", imgUrl);
+    // Thêm URL ảnh lỗi vào Set
     setErrorImages((prev) => {
       const newSet = new Set(prev);
       newSet.add(imgUrl);
       return newSet;
     });
 
-    // Nếu ảnh đang xem (activeImage) bị lỗi, quay về ảnh gốc
+    // Nếu ảnh đang xem bị lỗi, quay về ảnh gốc (Đã được chuẩn hóa)
     if (activeImage === imgUrl && product) {
-      setActiveImage(CLIENT_URL + "/" + product.image);
+      const normalizedImage = normalizeImagePath(product.image);
+      setActiveImage(API_URL + "/" + normalizedImage);
     }
   };
 
@@ -173,7 +187,12 @@ const ProductDetail: React.FC = () => {
     );
 
   // Lọc bỏ những ảnh đã bị đánh dấu là lỗi (404) khỏi danh sách hiển thị
-  const visibleGallery = galleryList.filter((img) => !errorImages.has(img));
+  // Lưu ý: galleryList chứa các đường dẫn đã được chuẩn hóa (ví dụ: "image/x.png")
+  const visibleGallery = galleryList.filter((img) => {
+    // Dùng URL đầy đủ để check lỗi trong Set
+    const fullUrl = CLIENT_URL + "/" + img;
+    return !errorImages.has(fullUrl);
+  });
 
   return (
     <div className="detail-container">
@@ -182,26 +201,42 @@ const ProductDetail: React.FC = () => {
         <div className="product-gallery">
           <div className="main-image-wrapper">
             <img
+              // activeImage đã là URL đầy đủ và đúng (API_URL + normalized path)
               src={activeImage}
               alt={product.name}
               className="main-image"
+              // Dùng URL đầy đủ để đánh dấu ảnh lỗi
               onError={() => handleImageError(activeImage)}
             />
           </div>
           {/* List ảnh nhỏ */}
-          {visibleGallery.length && (
+          {visibleGallery.length > 0 && ( // Kiểm tra visibleGallery.length
             <div className="sub-images-list">
-              {galleryList.map((img, index) => (
-                <img
-                  key={index}
-                  src={CLIENT_URL + "/" + img}
-                  alt={`Góc ${index}`}
-                  className={`sub-image ${activeImage === img ? "active" : ""}`}
-                  onClick={() => setActiveImage(img)}
-                  // Quan trọng: Nếu ảnh này không tồn tại trên server, nó sẽ tự ẩn đi
-                  onError={() => handleImageError(img)}
-                />
-              ))}
+              {galleryList.map((img, index) => {
+                // img đã được CHUẨN HÓA (ví dụ: "image/x.png")
+                const fullUrl = CLIENT_URL + "/" + img; // Nối chuỗi an toàn
+
+                // Nếu ảnh này đã bị đánh dấu lỗi, ta ẩn nó đi
+                if (errorImages.has(fullUrl)) {
+                    return null;
+                }
+
+                return (
+                  <img
+                    key={index}
+                    // --- SỬA LỖI NỐI CHUỖI 2 ---
+                    // Nối chuỗi an toàn: CLIENT_URL + "/" + [ĐƯỜNG DẪN ĐÃ CHUẨN HÓA]
+                    src={fullUrl}
+                    alt={`Góc ${index}`}
+                    // So sánh với URL đầy đủ
+                    className={`sub-image ${activeImage === fullUrl ? "active" : ""}`}
+                    // Khi click, chuyển sang URL đầy đủ
+                    onClick={() => setActiveImage(fullUrl)}
+                    // Quan trọng: Sử dụng fullUrl để đánh dấu ảnh lỗi
+                    onError={() => handleImageError(fullUrl)}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
