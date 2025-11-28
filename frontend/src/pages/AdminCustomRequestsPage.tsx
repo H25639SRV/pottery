@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import "../styles/AdminPages.css"; // Dùng chung CSS
+import "../styles/AdminPages.css";
 
 const API_URL = process.env.REACT_APP_API_URL || "";
 
@@ -11,6 +11,8 @@ interface CustomRequest {
   vaseName: string;
   patternFile: string;
   resultImage: string;
+  address: string;
+  paymentMethod: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
   adminNotes?: string;
   createdAt: string;
@@ -29,20 +31,16 @@ const getFullImageUrl = (rawPath: string) => {
 };
 
 const AdminCustomRequestsPage: React.FC = () => {
-  // ✅ SỬA: Lấy token, isAdmin và isLoading
   const { token, isAdmin, isLoading } = useAuth();
   const [requests, setRequests] = useState<CustomRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [editingId, setEditingId] = useState<number | null>(null);
   const [noteInput, setNoteInput] = useState("");
 
   useEffect(() => {
-    // Nếu đang load auth thì chưa làm gì cả
     if (isLoading) return;
 
-    // Nếu không phải Admin thì báo lỗi
     if (!isAdmin) {
       setError("Bạn không có quyền truy cập trang này.");
       setLoading(false);
@@ -70,17 +68,19 @@ const AdminCustomRequestsPage: React.FC = () => {
   }, [token, isAdmin, isLoading]);
 
   const handleUpdateStatus = async (id: number, status: string) => {
+    const finalNote = editingId === id ? noteInput : requests.find(r => r.id === id)?.adminNotes || "";
+
     try {
       await axios.patch(
         `${API_URL}/api/admin/custom-requests/${id}/status`,
-        { status, adminNotes: noteInput },
+        { status, adminNotes: finalNote },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setRequests((prev) =>
         prev.map((req) =>
           req.id === id
-            ? { ...req, status: status as any, adminNotes: noteInput }
+            ? { ...req, status: status as any, adminNotes: finalNote }
             : req
         )
       );
@@ -124,15 +124,37 @@ const AdminCustomRequestsPage: React.FC = () => {
 
               <div className="req-info">
                 <h3>{req.vaseName}</h3>
-                <p className="req-meta">
-                  <strong>Khách:</strong> {req.user.username} <br />
-                  <strong>Ngày:</strong>{" "}
-                  {new Date(req.createdAt).toLocaleDateString()}
-                </p>
+                
+                <div className="req-shipping-info">
+                  <div className="info-row">
+                    <strong>Địa chỉ:</strong>
+                    <span className="address-text">{req.address}</span>
+                  </div>
+                  <div className="info-row">
+                    <strong>Thanh toán:</strong>
+                    <span>{req.paymentMethod === 'cod' ? 'COD' : 'Chuyển khoản'}</span>
+                  </div>
+                </div>
+
+                <div className="req-meta">
+                  <div className="info-row">
+                    <strong>Khách:</strong>
+                    <span>{req.user.username}</span>
+                  </div>
+                  <div className="info-row">
+                    <strong>Email:</strong>
+                    <span>{req.user.email}</span>
+                  </div>
+                  <div className="info-row">
+                    <strong>Ngày tạo:</strong>
+                    <span>{new Date(req.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
 
                 {req.adminNotes && (
                   <div className="admin-note-display">
-                    <strong>Ghi chú Admin:</strong> {req.adminNotes}
+                    <strong>Ghi chú Admin:</strong>
+                    <p>{req.adminNotes}</p>
                   </div>
                 )}
 
@@ -152,24 +174,18 @@ const AdminCustomRequestsPage: React.FC = () => {
                         <button
                           className="btn-approve"
                           onClick={() => handleUpdateStatus(req.id, "APPROVED")}
-                        >
-                          Duyệt
-                        </button>
+                        >Duyệt</button>
                         <button
                           className="btn-reject"
                           onClick={() => handleUpdateStatus(req.id, "REJECTED")}
-                        >
-                          Từ chối
-                        </button>
+                        >Từ chối</button>
                       </div>
                     </>
                   ) : (
                     <button
                       className="btn-reset"
                       onClick={() => handleUpdateStatus(req.id, "PENDING")}
-                    >
-                      Xét duyệt lại
-                    </button>
+                    >Xét duyệt lại</button>
                   )}
                 </div>
               </div>

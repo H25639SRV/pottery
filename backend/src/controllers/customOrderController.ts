@@ -1,89 +1,146 @@
+// customOrderController.ts
+
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+// ❌ ĐÃ XÓA: Import CustomOrderRequestStatus bị lỗi vì nó không tồn tại trong schema.
+// Nếu muốn giữ kiểu an toàn, bạn có thể tự định nghĩa kiểu bên ngoài.
 
 const prisma = new PrismaClient();
 
-// Khách hàng: Gửi yêu cầu custom
+// Định nghĩa kiểu dữ liệu cho trạng thái thủ công (vì schema dùng String)
+type CustomRequestStatusString = "PENDING" | "APPROVED" | "REJECTED" | "COMPLETED";
+
+// ==================================================================
+// 1️⃣ CLIENT: TẠO YÊU CẦU CUSTOM MỚI
+// ==================================================================
 export const createCustomRequest = async (req: Request, res: Response) => {
-  // --- [PHỤC HỒI USERID] ---
-  // @ts-ignore
-  const user = req.user; // @ts-ignore
-  const userIdFromReq = req.userId;
+  try {
+    console.log("📥 Đang xử lý yêu cầu tạo đơn hàng custom...");
 
-  const userId = userIdFromReq || user?.userId; // --- [KẾT THÚC PHỤC HỒI] --- // [ĐÃ SỬA]: Chỉ lấy các trường cần thiết (vaseName, patternFile, resultImage)
-  const { vaseName, patternFile, resultImage } = req.body;
+    // --- BƯỚC 1: LẤY VÀ XỬ LÝ USER ID ---
+    const userDecoded = (req as any).user;
+    const rawUserId = userDecoded?.id || userDecoded?.userId || req.body.userId;
+    const userId = parseInt(String(rawUserId), 10);
 
-  if (!userId || !resultImage) {
-    // Ghi log lỗi cụ thể hơn
-    console.error("❌ Lỗi tạo custom request: Thiếu userId hoặc resultImage.", {
-      userId: userId,
-      resultImage: !!resultImage,
-    });
-    return res.status(400).json({
-      error: "Thiếu thông tin yêu cầu (userId hoặc resultImage)",
-    });
-  }
+    if (isNaN(userId)) {
+      console.error("❌ Lỗi: User ID không hợp lệ:", rawUserId);
+      return res
+        .status(401)
+        .json({
+          error: "Không xác định được người dùng. Vui lòng đăng nhập lại.",
+        });
+    }
 
-  try {
-    const request = await prisma.customOrderRequest.create({
-      data: {
-        userId: parseInt(userId), // [ĐÃ XÓA]: baseProductId không còn trong schema và không cần truyền
-        vaseName: vaseName || "render.png",
-        patternFile: patternFile || "unknown",
-        resultImage: resultImage,
-        status: "PENDING",
-      },
-    });
-    res.status(201).json({ message: "Đã gửi yêu cầu thành công", request });
-  } catch (error: any) {
-    console.error("❌ Lỗi khi tạo yêu cầu custom:", error);
-    // [ĐÃ XÓA]: Logic xử lý lỗi P2003 (Khóa ngoại) không còn cần thiết
-    res.status(500).json({ error: "Lỗi khi tạo yêu cầu: " + error.message });
-  }
+    // --- BƯỚC 2: NHẬN DỮ LIỆU TỪ FRONTEND ---
+    const { 
+      vaseName, 
+      patternFile, 
+      resultImage, 
+      address, 
+      paymentMethod 
+    } = req.body;
+
+    // Validate dữ liệu cơ bản
+    if (!resultImage) {
+      return res
+        .status(400)
+        .json({ error: "Không tìm thấy ảnh đã render (resultImage)" });
+    }
+
+    if (!address || typeof address !== 'string' || address.trim().length < 10) {
+      return res.status(400).json({ error: "Địa chỉ giao hàng là bắt buộc và cần chi tiết." });
+    }
+
+    // --- BƯỚC 3: TẠO YÊU CẦU CUSTOM VÀO DB ---
+    const newRequest = await prisma.customOrderRequest.create({
+      data: {
+        userId: userId, 
+        vaseName: vaseName || "Sản phẩm tùy chỉnh",
+        patternFile: patternFile || "unknown_pattern",
+        resultImage: resultImage,
+        // ✅ SỬ DỤNG CHUỖI LITERAL. PHẢI ĐỒNG BỘ VỚI @default("PENDING") trong schema.
+        status: "PENDING", 
+
+        // LƯU TRƯỜNG ĐỒNG BỘ VỚI ORDER
+        address: address.trim(),
+        paymentMethod: paymentMethod || "cod",
+      },
+    });
+
+    console.log(
+      `✅ Tạo yêu cầu Custom thành công! ID: ${newRequest.id} - Payment: ${newRequest.paymentMethod}`
+    );
+    res.status(201).json(newRequest);
+  } catch (error: any) {
+    console.error("❌ Lỗi SERVER khi tạo yêu cầu Custom:", error);
+    res.status(500).json({
+      error: "Lỗi nội bộ server khi tạo yêu cầu Custom.",
+      details: error.message,
+    });
+  }
 };
 
-// Admin: Xem tất cả yêu cầu custom
+// ==================================================================
+// 2️⃣ ADMIN: LẤY TẤT CẢ YÊU CẦU CUSTOM
+// ==================================================================
 export const getAllCustomRequests = async (req: Request, res: Response) => {
-  try {
-    const requests = await prisma.customOrderRequest.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: {
-          select: { id: true, username: true, email: true },
-        },
-        // [ĐÃ XÓA]: Không còn include product vì đã loại bỏ liên kết
-      },
-    });
-    res.status(200).json(requests);
-  } catch (error: any) {
-    res.status(500).json({ error: "Lỗi khi lấy yêu cầu: " + error.message });
-  }
+  try {
+    const requests = await prisma.customOrderRequest.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: { id: true, username: true, email: true },
+        },
+      },
+    });
+
+    res.status(200).json(requests);
+  } catch (error: any) {
+    console.error("❌ Lỗi lấy danh sách yêu cầu Custom:", error);
+    res
+      .status(500)
+      .json({ error: "Lỗi khi lấy danh sách yêu cầu Custom: " + error.message });
+  }
 };
 
-// Admin: Cập nhật trạng thái yêu cầu (Duyệt/Từ chối)
-export const updateCustomRequestStatus = async (
-  req: Request,
-  res: Response
-) => {
-  const { requestId } = req.params;
-  const { status, adminNotes } = req.body; // "APPROVED", "REJECTED"
+// ==================================================================
+// 3️⃣ ADMIN: CẬP NHẬT TRẠNG THÁI YÊU CẦU CUSTOM
+// ==================================================================
+export const updateCustomRequestStatus = async (req: Request, res: Response) => {
+  const { requestId } = req.params;
+  const { status, adminNotes } = req.body; 
 
-  if (!status) {
-    return res.status(400).json({ error: "Thiếu trạng thái" });
-  }
+  const parsedRequestId = parseInt(requestId);
+  if (isNaN(parsedRequestId)) {
+    return res.status(400).json({ error: "ID yêu cầu không hợp lệ." });
+  }
 
-  try {
-    const updatedRequest = await prisma.customOrderRequest.update({
-      where: { id: parseInt(requestId) },
-      data: {
-        status: status,
-        adminNotes: adminNotes,
-      },
-    });
-    res.status(200).json(updatedRequest);
-  } catch (error: any) {
-    res
-      .status(500)
-      .json({ error: "Lỗi khi cập nhật yêu cầu: " + error.message });
-  }
+  if (!status) {
+    return res
+      .status(400)
+      .json({ error: "Cần cung cấp trạng thái mới (status)" });
+  }
+
+  try {
+    const updatedRequest = await prisma.customOrderRequest.update({
+      where: { id: parsedRequestId },
+      data: { 
+        // ✅ status là string, không cần cast nếu type của req.body.status là string.
+        // Tuy nhiên, có thể cast để đảm bảo type check nếu cần.
+        status: status as string, 
+        adminNotes: adminNotes, 
+      },
+    });
+
+    console.log(`🔄 Đã cập nhật Yêu cầu Custom #${requestId} sang trạng thái: ${status}`);
+    res.status(200).json(updatedRequest);
+  } catch (error: any) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: `Không tìm thấy Yêu cầu Custom với ID: ${requestId}` });
+    }
+    console.error("❌ Lỗi cập nhật trạng thái Yêu cầu Custom:", error);
+    res
+      .status(500)
+      .json({ error: "Lỗi khi cập nhật yêu cầu Custom: " + error.message });
+  }
 };

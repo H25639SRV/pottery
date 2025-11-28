@@ -1,7 +1,7 @@
 import React, { useState, ChangeEvent } from "react";
 import axios from "axios";
 import "../styles/TryPatternPage.css";
-import { useAuth } from "../context/AuthContext"; // ✅ Import AuthContext
+import { useAuth } from "../context/AuthContext"; 
 import { useNavigate } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL || "";
@@ -18,21 +18,28 @@ interface Product {
   basePath: string;
 }
 
-// Đối tượng File ảo (Mock File) để tái sử dụng logic render
 class MockFile extends File {
   constructor(name: string) {
     super([], name, { type: "image/png" });
   }
 }
 
-// Danh sách Sticker giả lập
 const stickers: string[] = Array.from(
   { length: 39 },
   (_, i) => `sticker/sticker${i + 1}.png`
 );
 
+const products: Product[] = [
+  {
+    id: 1,
+    name: "Bình gốm trụ",
+    templateName: "render.png",
+    basePath: "https://raw.githubusercontent.com/H25639SRV/pottery/refs/heads/main/backend/public/templates/render.png",
+  },
+];
+
 const TryPatternPage: React.FC = () => {
-  const { user, token } = useAuth(); // ✅ Lấy user và token
+  const { user, token } = useAuth(); 
   const navigate = useNavigate();
 
   const [rendered, setRendered] = useState<{ [key: number]: string }>({});
@@ -41,18 +48,9 @@ const TryPatternPage: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<{
     [key: number]: File | MockFile | null;
   }>({});
-  const [selectedStickerPath, setSelectedStickerPath] = useState<string | null>(
-    null
-  );
-
-  const products: Product[] = [
-    {
-      id: 1,
-      name: "Bình gốm trụ",
-      templateName: "render.png",
-      basePath: "https://raw.githubusercontent.com/H25639SRV/pottery/refs/heads/main/backend/public/templates/render.png",
-    },
-  ];
+  const [selectedStickerPath, setSelectedStickerPath] = useState<string | null>(null);
+  const [address, setAddress] = useState<string>(""); 
+  const [paymentMethod, setPaymentMethod] = useState<string>("cod"); 
 
   const handleFileChange = (id: number, e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -67,7 +65,7 @@ const TryPatternPage: React.FC = () => {
     const mockFile = new MockFile(stickerName);
     setSelectedFiles((prev) => ({ ...prev, [id]: mockFile }));
   };
-
+  
   const handleRender = async (id: number, templateName: string) => {
     const file = selectedFiles[id];
     if (!file) {
@@ -122,43 +120,45 @@ const TryPatternPage: React.FC = () => {
     }
   };
 
-  // ✅ ĐÃ KHÔI PHỤC LOGIC GỬI YÊU CẦU CUSTOM
   const handleSendCustomRequest = async (product: Product) => {
     const resultImage = rendered[product.id];
     const patternFile = selectedFiles[product.id];
 
-    // 1. Kiểm tra đăng nhập
     if (!user || !token) {
       alert("Vui lòng đăng nhập để gửi yêu cầu custom.");
       navigate("/login");
       return;
     }
 
-    // 2. Kiểm tra dữ liệu
     if (!resultImage) {
       alert("Bạn cần render hoa văn trước khi gửi yêu cầu.");
       return;
     }
+    
+    if (!address.trim()) {
+        alert("Vui lòng nhập Địa chỉ giao hàng.");
+        return;
+    }
+    
+    if (!paymentMethod) {
+        alert("Vui lòng chọn Phương thức thanh toán.");
+        return;
+    }
 
-    if (
-      !window.confirm(
-        "Bạn có chắc muốn gửi yêu cầu đặt làm sản phẩm này không?"
-      )
-    )
-      return;
+    if (!window.confirm("Bạn có chắc muốn gửi yêu cầu đặt làm sản phẩm này không?")) return;
 
     setLoading((prev) => ({ ...prev, [product.id]: true }));
 
     try {
-      // 3. Gửi API về Backend
       const payload = {
-        userId: user.id, // Gửi ID người dùng
+        userId: user.id, 
         vaseName: product.name,
         patternFile: patternFile?.name || "unknown_pattern",
-        resultImage: resultImage, // Đường dẫn ảnh kết quả (/render_output/...)
+        resultImage: resultImage, 
+        address: address.trim(), 
+        paymentMethod: paymentMethod, 
       };
 
-      // Gọi API (Đường dẫn này khớp với route bạn đã định nghĩa ở backend)
       await axios.post(`${API_URL}/api/custom-request`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -167,7 +167,6 @@ const TryPatternPage: React.FC = () => {
 
       alert("✅ Đã gửi yêu cầu thành công! Admin sẽ xem xét và liên hệ lại.");
 
-      // Reset trạng thái sau khi gửi
       setRendered((prev) => {
         const newState = { ...prev };
         delete newState[product.id];
@@ -175,6 +174,9 @@ const TryPatternPage: React.FC = () => {
       });
       setSelectedFiles((prev) => ({ ...prev, [product.id]: null }));
       setSelectedStickerPath(null);
+      setAddress(""); 
+      setPaymentMethod("cod"); 
+      
     } catch (err: any) {
       console.error("❌ Lỗi gửi yêu cầu custom:", err);
       alert("Lỗi khi gửi yêu cầu. Vui lòng thử lại sau.");
@@ -218,55 +220,54 @@ const TryPatternPage: React.FC = () => {
       <h1>Thử Hoa Văn Lên Bình Gốm</h1>
       {products.map((p) => (
         <div key={p.id} className="try-section">
-          {/* CỘT 1: ẢNH GỐC */}
-          <div className="try-column">
+          {/* Cột 1: Ảnh gốc */}
+          <div className="try-column image-column">
             <h3>Ảnh gốc: {p.name}</h3>
             <div className="image-container">
               <img src={p.basePath} alt={p.name} className="result-image" />
             </div>
           </div>
 
-          {/* CỘT 2: TÙY CHỈNH HOA VĂN */}
+          {/* Cột 2: Tùy chỉnh hoa văn */}
           <div className="try-column actions-column">
             <h3>Tùy chỉnh hoa văn</h3>
 
-            {/* 1. Chọn file upload */}
-            <label className="custom-file-label" htmlFor={`file-${p.id}`}>
-              Chọn hoa văn từ máy tính
-            </label>
-            <input
-              id={`file-${p.id}`}
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileChange(p.id, e)}
-              style={{ display: "none" }}
-            />
+            <div className="upload-section">
+              <label className="custom-file-label" htmlFor={`file-${p.id}`}>
+                Chọn hoa văn từ máy tính
+              </label>
+              <input
+                id={`file-${p.id}`}
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileChange(p.id, e)}
+                style={{ display: "none" }}
+              />
 
-            {selectedFiles[p.id] && (
-              <p className="selected-file-name">
-                Đã chọn: **{selectedFiles[p.id]?.name}**
-              </p>
-            )}
-
-            <div className="sticker-separator">--- HOẶC ---</div>
-
-            {/* 2. Danh sách Sticker */}
-            <h4>Chọn Sticker có sẵn:</h4>
-            <div className="sticker-gallery">
-              {stickers.map((stickerPath) => (
-                <img
-                  key={stickerPath}
-                  src={getStickerImageUrl(stickerPath)}
-                  alt={stickerPath}
-                  className={`sticker-item ${
-                    selectedStickerPath === stickerPath ? "selected" : ""
-                  }`}
-                  onClick={() => handleStickerSelect(p.id, stickerPath)}
-                />
-              ))}
+              {selectedFiles[p.id] && (
+                <p className="selected-file-name">Đã chọn: {selectedFiles[p.id]?.name}</p>
+              )}
             </div>
 
-            {/* 3. Nút Render */}
+            <div className="sticker-separator">— HOẶC —</div>
+
+            <div className="sticker-section">
+              <h4>Chọn Sticker có sẵn:</h4>
+              <div className="sticker-gallery">
+                {stickers.map((stickerPath) => (
+                  <img
+                    key={stickerPath}
+                    src={getStickerImageUrl(stickerPath)}
+                    alt={stickerPath}
+                    className={`sticker-item ${
+                      selectedStickerPath === stickerPath ? "selected" : ""
+                    }`}
+                    onClick={() => handleStickerSelect(p.id, stickerPath)}
+                  />
+                ))}
+              </div>
+            </div>
+
             <button
               onClick={() => handleRender(p.id, p.templateName)}
               disabled={loading[p.id] || !selectedFiles[p.id]}
@@ -281,15 +282,13 @@ const TryPatternPage: React.FC = () => {
                   className="progress-bar"
                   style={{ width: `${progress[p.id] || 0}%` }}
                 ></div>
-                <span className="progress-text">
-                  Đang tạo ảnh: {progress[p.id] || 0}%
-                </span>
+                <span className="progress-text">Đang tạo ảnh: {progress[p.id] || 0}%</span>
               </div>
             )}
           </div>
 
-          {/* CỘT 3: ẢNH SAU KHI THÊM HOA VĂN (KẾT QUẢ) */}
-          <div className="try-column">
+          {/* Cột 3: Ảnh kết quả */}
+          <div className="try-column result-column">
             <h3>Ảnh sau khi thêm hoa văn</h3>
             <div className="image-container">
               {rendered[p.id] ? (
@@ -302,12 +301,8 @@ const TryPatternPage: React.FC = () => {
                 <div className="placeholder-wrapper">
                   {loading[p.id] ? (
                     <div className="loading-overlay">
-                      <div className="placeholder-content">
-                        <div className="spinner"></div>
-                        <span className="placeholder-text">
-                          AI đang xử lý...
-                        </span>
-                      </div>
+                      <div className="spinner"></div>
+                      <span className="placeholder-text">AI đang xử lý...</span>
                     </div>
                   ) : (
                     <div className="placeholder-content">
@@ -315,50 +310,61 @@ const TryPatternPage: React.FC = () => {
                       <span className="placeholder-text">
                         Kết quả sẽ hiển thị ở đây
                       </span>
-                      <span className="placeholder-text">
-                        Chọn hoa văn và nhấn "Render"
-                      </span>
+                      <span className="placeholder-text">Chọn hoa văn và nhấn "Render"</span>
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Các nút hành động */}
             {rendered[p.id] && (
-              <div
-                style={{
-                  display: "flex",
-                  gap: "10px",
-                  marginTop: "10px",
-                  justifyContent: "center",
-                }}
-              >
-                <button
-                  onClick={() => handleDownload(p.id)}
-                  className="custom-request-button"
-                >
-                  Tải về
-                </button>
-                <button
-                  onClick={() => handleDelete(p.id)}
-                  className="custom-request-button"
-                >
-                  Xóa
-                </button>
+              <div className="shipping-section">
+                <div className="form-group">
+                  <label htmlFor={`address-${p.id}`}>Địa chỉ giao hàng:</label>
+                  <textarea
+                    id={`address-${p.id}`}
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Vui lòng nhập địa chỉ (Tên người nhận, SĐT, số nhà, đường, xã/phường, quận/huyện, tỉnh/thành phố)"
+                    rows={3}
+                    required
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor={`payment-${p.id}`}>Phương thức thanh toán:</label>
+                  <select
+                    id={`payment-${p.id}`}
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    required
+                  >
+                    <option value="cod">Thanh toán khi nhận hàng (COD)</option>
+                    <option value="bank_transfer">Chuyển khoản Ngân hàng</option>
+                  </select>
+                </div>
               </div>
             )}
-
-            {/* ✅ NÚT GỬI YÊU CẦU CUSTOM ĐÃ ĐƯỢC KHÔI PHỤC */}
+            
             {rendered[p.id] && (
-              <button
-                onClick={() => handleSendCustomRequest(p)}
-                className="custom-request-button primary"
-                disabled={loading[p.id]}
-                style={{ marginTop: "15px", width: "100%" }}
-              >
-                Gửi yêu cầu Custom
-              </button>
+              <div className="action-buttons">
+                <div className="secondary-buttons">
+                  <button onClick={() => handleDownload(p.id)} className="btn-download">
+                    Tải về
+                  </button>
+                  <button onClick={() => handleDelete(p.id)} className="btn-delete">
+                    Xóa
+                  </button>
+                </div>
+                
+                <button
+                  onClick={() => handleSendCustomRequest(p)}
+                  className="btn-custom-request"
+                  disabled={loading[p.id] || !address.trim() || !paymentMethod}
+                >
+                  Gửi yêu cầu Custom
+                </button>
+              </div>
             )}
           </div>
         </div>

@@ -7,8 +7,9 @@
   --color-secondary: #ff7f50; /* San hô (Dùng cho Custom Request) */
   --color-success: #5d6939; /* Xanh lá cho Upload */
   --color-info: #007bff; /* Xanh dương cho Loading (spinner nếu có) */
+  --color-warning: #ffa500; /* Cam cho nút tải về */
+  --color-danger: #dc3545; /* Đỏ cho nút xóa */
   --color-shadow-light: rgba(0, 0, 0, 0.08);
-
   /* Màu gradient cho placeholder/loading */
   --gradient-start: #e0f2f7; /* Rất nhạt xanh */
   --gradient-end: #f0e6f2; /* Rất nhạt tím */
@@ -91,7 +92,6 @@
 /* --------------------------------- */
 /* 2. Khu Vực Ảnh & Loading Overlay (TĂNG KÍCH THƯỚC VÀ BUỘC ẢNH PHÓNG TO) */
 /* --------------------------------- */
-
 .image-container {
   position: relative;
   width: 100%;
@@ -157,6 +157,7 @@
   color: var(--border-dashed);
   margin-bottom: 10px;
 }
+
 .placeholder-content .placeholder-text {
   color: #777;
   font-size: 1em;
@@ -205,7 +206,6 @@
 /* --------------------------------- */
 /* 3. Nút & Progress Bar */
 /* --------------------------------- */
-
 /* Custom file input */
 .custom-file-label {
   display: inline-block;
@@ -304,53 +304,182 @@
   }
 }
 
-/* Custom Request Button (Dùng cho Tải về/Xóa) */
-.custom-request-button {
-  padding: 10px 20px;
-  background-color: #f0f0f0;
-  color: #666;
-  border: 1px solid #ddd;
+/* ================================= */
+/* NÚT TẢI VỀ/XÓA/GỬI YÊU CẦU CUSTOM */
+/* ================================= */
+
+/* Container cho các nút hành động */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+  width: 100%;
+}
+
+/* Container cho nút Tải về và Xóa */
+.secondary-buttons {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+/* Nút Tải về */
+.btn-download {
+  flex: 1;
+  padding: 12px 20px;
+  background-color: var(--color-warning);
+  color: white;
+  border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 1em;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 8px rgba(255, 165, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 8px;
 }
 
-.custom-request-button:hover:not(:disabled) {
-  background-color: #e8e8e8;
-  border-color: #ccc;
+.btn-download:hover:not(:disabled) {
+  background-color: #e69500;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(255, 165, 0, 0.6);
 }
 
-.custom-request-button:disabled {
-  background-color: #f8f8f8;
-  color: #aaaaaa;
+.btn-download:disabled {
+  background-color: #cccccc;
   cursor: not-allowed;
   box-shadow: none;
-  border-color: #eee;
 }
 
-/* Nút Gửi yêu cầu Custom nổi bật hơn */
-.custom-request-button.primary {
-  background-color: var(--color-secondary) !important;
-  color: white !important;
-  border: none !important;
-  box-shadow: 0 4px 10px rgba(255, 127, 80, 0.5) !important;
+/* Nút Xóa */
+.btn-delete {
+  flex: 1;
+  padding: 12px 20px;
+  background-color: var(--color-danger);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1em;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 8px rgba(220, 53, 69, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.custom-request-button.primary:hover:not(:disabled) {
-  background-color: #e67347 !important;
+.btn-delete:hover:not(:disabled) {
+  background-color: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(220, 53, 69, 0.6);
+}
+
+.btn-delete:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Nút Gửi yêu cầu Custom */
+.btn-custom-request {
+  width: 100%;
+  padding: 14px 20px;
+  background-color: var(--color-secondary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1.1em;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 127, 80, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.btn-custom-request:hover:not(:disabled) {
+  background-color: #e67347;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(255, 127, 80, 0.7);
+}
+
+.btn-custom-request:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Biểu tượng cho các nút (nếu muốn thêm icon) */
+.btn-download::before {
+  content: "📥";
+  font-size: 1.1em;
+}
+
+.btn-delete::before {
+  content: "🗑️";
+  font-size: 1.1em;
+}
+
+.btn-custom-request::before {
+  content: "✨";
+  font-size: 1.1em;
+}
+
+/* Form thông tin giao hàng */
+.shipping-section {
+  width: 100%;
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #333;
+  font-size: 0.95em;
+}
+
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 0.95em;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(82, 139, 139, 0.1);
 }
 
 /* --------------------------------- */
 /* 4. Sticker Gallery */
 /* --------------------------------- */
-
 .sticker-separator {
   font-size: 1.1em;
   color: #888;
@@ -397,7 +526,6 @@
 /* --------------------------------- */
 /* 5. Responsive adjustments */
 /* --------------------------------- */
-
 /* Đảm bảo bố cục vẫn hoạt động trên màn hình nhỏ hơn */
 @media (max-width: 1600px) {
   .try-column {
@@ -442,6 +570,11 @@
   .try-page {
     max-width: 1200px;
   }
+  
+  /* Điều chỉnh các nút cho màn hình nhỏ hơn */
+  .secondary-buttons {
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 992px) {
@@ -460,4 +593,152 @@
   .image-container {
     height: 400px;
   }
+  
+  /* Điều chỉnh các nút cho mobile */
+  .btn-download,
+  .btn-delete,
+  .btn-custom-request {
+    padding: 12px 15px;
+    font-size: 0.95em;
+  }
+}
+
+@media (max-width: 768px) {
+  .try-page {
+    padding: 20px 10px;
+  }
+  
+  .try-section {
+    padding: 20px;
+    gap: 20px;
+  }
+  
+  .image-container {
+    height: 350px;
+  }
+  
+  /* Sticker gallery responsive */
+  .sticker-gallery {
+    grid-template-columns: repeat(3, 1fr);
+    max-height: 200px;
+  }
+  
+  .sticker-item {
+    width: 55px;
+    height: 55px;
+  }
+}
+
+@media (max-width: 480px) {
+  .try-page h1 {
+    font-size: 2.2em;
+  }
+  
+  .image-container {
+    height: 300px;
+  }
+  
+  .sticker-gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  /* Các nút chiếm toàn bộ chiều rộng trên mobile */
+  .secondary-buttons {
+    flex-direction: column;
+  }
+  
+  .btn-download,
+  .btn-delete {
+    width: 100%;
+  }
+}
+
+/* --------------------------------- */
+/* 6. Custom Request Modal */
+/* --------------------------------- */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modal-backdrop.show {
+  opacity: 1;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
+  text-align: left;
+  transform: translateY(-50px);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  opacity: 0;
+}
+
+.modal-backdrop.show .modal-content {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.modal-title {
+  color: var(--color-secondary);
+  margin-bottom: 20px;
+  font-size: 1.5em;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+  font-weight: 700;
+}
+
+.modal-field {
+  margin-bottom: 15px;
+}
+
+.modal-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.modal-input,
+.modal-select,
+.modal-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.modal-textarea {
+  resize: vertical;
+}
+
+.modal-input:focus,
+.modal-select:focus,
+.modal-textarea:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(82, 139, 139, 0.2);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 25px;
 }
