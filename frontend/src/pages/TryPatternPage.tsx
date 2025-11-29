@@ -29,6 +29,21 @@ const stickers: string[] = Array.from(
   (_, i) => `sticker/sticker${i + 1}.png`
 );
 
+// Định nghĩa các màu sắc có sẵn
+const colorOptions = [
+  { name: "white", value: "#ffffff", template: "render.png" },
+  { name: "black", value: "#000000", template: "black.png" },
+  { name: "blue", value: "#0000FF", template: "blue.png" },
+  { name: "brown", value: "#8B4513", template: "brown.png" },
+  { name: "yellow", value: "#FFFF00", template: "yellow.png" },
+  { name: "red", value: "#FF0000", template: "red.png" },
+  { name: "gray", value: "#808080", template: "gray.png" },
+  { name: "green", value: "#008000", template: "green.png" },
+  { name: "orange", value: "#FFA500", template: "orange.png" },
+  { name: "pink", value: "#FFC0CB", template: "pink.png" },
+  { name: "purple", value: "#800080", template: "purple.png" },
+];
+
 const products: Product[] = [
   {
     id: 1,
@@ -51,6 +66,7 @@ const TryPatternPage: React.FC = () => {
   const [selectedStickerPath, setSelectedStickerPath] = useState<string | null>(null);
   const [address, setAddress] = useState<string>(""); 
   const [paymentMethod, setPaymentMethod] = useState<string>("cod"); 
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
   const handleFileChange = (id: number, e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -65,14 +81,41 @@ const TryPatternPage: React.FC = () => {
     const mockFile = new MockFile(stickerName);
     setSelectedFiles((prev) => ({ ...prev, [id]: mockFile }));
   };
+
+  const handleColorSelect = (color: { value: string; template: string }) => {
+    setSelectedColor(color.value);
+  };
   
-  const handleRender = async (id: number, templateName: string) => {
+  const getCurrentTemplatePath = () => {
+    if (!selectedColor) {
+      return "https://raw.githubusercontent.com/H25639SRV/pottery/refs/heads/main/backend/public/templates/render.png";
+    }
+    
+    const colorOption = colorOptions.find(color => color.value === selectedColor);
+    if (colorOption) {
+      return `https://raw.githubusercontent.com/H25639SRV/pottery/refs/heads/main/frontend/public/render/${colorOption.template}`;
+    }
+    
+    return "https://raw.githubusercontent.com/H25639SRV/pottery/refs/heads/main/backend/public/templates/render.png";
+  };
+
+  const getCurrentTemplateName = () => {
+    if (!selectedColor) {
+      return "render.png";
+    }
+    
+    const colorOption = colorOptions.find(color => color.value === selectedColor);
+    return colorOption ? colorOption.template : "render.png";
+  };
+  
+  const handleRender = async (id: number) => {
     const file = selectedFiles[id];
     if (!file) {
       alert("⚠️ Vui lòng chọn hoa văn hoặc sticker trước khi render!");
       return;
     }
 
+    const templateName = getCurrentTemplateName();
     const formData = new FormData();
     formData.append("templateName", templateName);
 
@@ -176,6 +219,7 @@ const TryPatternPage: React.FC = () => {
       setSelectedStickerPath(null);
       setAddress(""); 
       setPaymentMethod("cod"); 
+      setSelectedColor(null);
       
     } catch (err: any) {
       console.error("❌ Lỗi gửi yêu cầu custom:", err);
@@ -205,6 +249,7 @@ const TryPatternPage: React.FC = () => {
     });
     setSelectedFiles((prev) => ({ ...prev, [id]: null }));
     setSelectedStickerPath(null);
+    setSelectedColor(null);
   };
 
   const getRenderedImageUrl = (path: string) => {
@@ -224,7 +269,11 @@ const TryPatternPage: React.FC = () => {
           <div className="try-column image-column">
             <h3>Ảnh gốc: {p.name}</h3>
             <div className="image-container">
-              <img src={p.basePath} alt={p.name} className="result-image" />
+              <img 
+                src={getCurrentTemplatePath()} 
+                alt={p.name} 
+                className="result-image" 
+              />
             </div>
           </div>
 
@@ -268,12 +317,43 @@ const TryPatternPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Phần chọn màu nền mới */}
+            <div className="color-section">
+              <h4>Chọn màu nền phần dưới:</h4>
+              <div className="color-options">
+                {colorOptions.map((color) => (
+                  <div
+                    key={color.value}
+                    className={`color-option ${
+                      selectedColor === color.value ? "selected" : ""
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                    onClick={() => handleColorSelect(color)}
+                    title={color.name}
+                  />
+                ))}
+              </div>
+              {selectedColor && (
+                <p className="selected-color-text">
+                  Màu này sẽ được áp dụng cho phần thân dưới của bình gốm
+                </p>
+              )}
+            </div>
+
+            {/* NÚT RENDER - ĐÃ SỬA ĐỂ GIỮ MÀU XANH KHI ĐANG RENDER */}
             <button
-              onClick={() => handleRender(p.id, p.templateName)}
+              onClick={() => handleRender(p.id)}
               disabled={loading[p.id] || !selectedFiles[p.id]}
-              className="render-button"
+              className={`render-button ${loading[p.id] ? 'rendering' : ''}`}
             >
-              {loading[p.id] ? "Đang xử lý..." : "Render"}
+              {loading[p.id] ? (
+                <div className="render-button-loading">
+                  <div className="render-spinner"></div>
+                  AI đang xử lý...
+                </div>
+              ) : (
+                'Render'
+              )}
             </button>
 
             {loading[p.id] && (

@@ -151,34 +151,43 @@
   padding: 20px;
 }
 
-/* Style cho nội dung của placeholder */
-.placeholder-content .placeholder-icon {
-  font-size: 3em;
-  color: var(--border-dashed);
-  margin-bottom: 10px;
+/* --------------------------------- */
+/* 3. Loading Overlay Improvements */
+/* --------------------------------- */
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e0f2f7 0%, #b3e0f2 100%); /* Màu xanh như ảnh 1 */
+  border-radius: 8px;
+  z-index: 10;
 }
 
-.placeholder-content .placeholder-text {
-  color: #777;
-  font-size: 1em;
-  font-weight: 500;
-}
-
-/* Loading overlay cụ thể (khi loading) */
-.loading-overlay .placeholder-content {
-  border-color: var(--color-info);
-  animation: placeholder-pulse 1.5s infinite alternate;
-}
-
-/* Biểu tượng spinner */
-.spinner {
-  border: 5px solid rgba(255, 255, 255, 0.6);
-  border-top: 5px solid var(--color-info);
+.loading-overlay .spinner {
+  border: 4px solid rgba(255, 255, 255, 0.8);
+  border-top: 4px solid #528b8b; /* Màu chủ đạo của website */
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 10px;
+  width: 50px;
+  height: 50px;
+  animation: spin 1.2s linear infinite;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.loading-overlay .placeholder-text {
+  color: #2c5e5e; /* Màu chữ tối hơn để dễ đọc trên nền xanh */
+  font-size: 1.1em;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  padding: 0 20px;
 }
 
 /* Keyframes cho spinner */
@@ -191,20 +200,51 @@
   }
 }
 
-/* Keyframes cho hiệu ứng nhấp nháy/pulse của placeholder/loading */
-@keyframes placeholder-pulse {
+/* Hiệu ứng pulse cho background loading */
+@keyframes loading-pulse {
   0% {
-    transform: scale(0.99);
-    opacity: 0.9;
+    background: linear-gradient(135deg, #e0f2f7 0%, #b3e0f2 100%);
+  }
+  50% {
+    background: linear-gradient(135deg, #d4ebf2 0%, #a6d4f2 100%);
   }
   100% {
-    transform: scale(1);
-    opacity: 1;
+    background: linear-gradient(135deg, #e0f2f7 0%, #b3e0f2 100%);
   }
 }
 
+.loading-overlay {
+  animation: loading-pulse 2s ease-in-out infinite;
+}
+
+/* Đảm bảo placeholder content căn giữa hoàn toàn */
+.placeholder-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+}
+
+.placeholder-content .placeholder-icon {
+  font-size: 3.5em;
+  color: #528b8b;
+  margin-bottom: 15px;
+  opacity: 0.8;
+}
+
+.placeholder-content .placeholder-text {
+  color: #666;
+  font-size: 1em;
+  font-weight: 500;
+  line-height: 1.4;
+  max-width: 80%;
+}
+
 /* --------------------------------- */
-/* 3. Nút & Progress Bar */
+/* 4. Nút & Progress Bar - ĐÃ SỬA NÚT RENDER */
 /* --------------------------------- */
 /* Custom file input */
 .custom-file-label {
@@ -237,7 +277,7 @@
   max-width: 90%;
 }
 
-/* Render button */
+/* Render button - ĐÃ SỬA ĐỂ GIỮ MÀU XANH KHI ĐANG RENDER */
 .render-button {
   padding: 12px 30px;
   background-color: var(--color-primary);
@@ -247,20 +287,52 @@
   cursor: pointer;
   font-weight: 600;
   font-size: 1.1em;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  transition: all 0.3s ease;
   box-shadow: 0 4px 10px rgba(82, 139, 139, 0.5);
   margin-top: 20px;
+  width: 100%;
+  position: relative;
 }
 
-.render-button:hover:not(:disabled) {
+/* Trạng thái bình thường */
+.render-button:not(.rendering):not(:disabled):hover {
   background-color: #497e7e;
   transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(82, 139, 139, 0.6);
 }
 
-.render-button:disabled {
+/* Trạng thái khi đang render - GIỮ MÀU XANH */
+.render-button.rendering {
+  background-color: var(--color-primary) !important;
+  opacity: 0.9;
+  cursor: not-allowed;
+  box-shadow: 0 4px 10px rgba(82, 139, 139, 0.4);
+}
+
+/* Trạng thái disabled (khi chưa chọn file) */
+.render-button:disabled:not(.rendering) {
   background-color: #cccccc;
   cursor: not-allowed;
   box-shadow: none;
+  transform: none;
+}
+
+/* Container cho nội dung loading trong nút */
+.render-button-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Spinner trong nút render */
+.render-spinner {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  animation: spin 1s linear infinite;
 }
 
 /* Progress bar */
@@ -478,7 +550,7 @@
 }
 
 /* --------------------------------- */
-/* 4. Sticker Gallery */
+/* 5. Sticker Gallery */
 /* --------------------------------- */
 .sticker-separator {
   font-size: 1.1em;
@@ -524,7 +596,68 @@
 }
 
 /* --------------------------------- */
-/* 5. Responsive adjustments */
+/* 6. Phần chọn màu nền */
+/* --------------------------------- */
+.color-section {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  width: 100%;
+}
+
+.color-section h4 {
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 1.1em;
+  text-align: center;
+}
+
+.color-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.color-option {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+}
+
+.color-option.selected {
+  border-color: #ff7f50;
+  box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.5);
+  transform: scale(1.15);
+}
+
+/* Đảm bảo màu trắng có viền để nhìn thấy */
+.color-option[style*="background-color: #ffffff"],
+.color-option[style*="background-color: rgb(255, 255, 255)"] {
+  border: 2px solid #ccc;
+}
+
+.selected-color-text {
+  font-size: 0.9em;
+  color: #666;
+  text-align: center;
+  font-style: italic;
+  margin-top: 10px;
+}
+
+/* --------------------------------- */
+/* 7. Responsive adjustments */
 /* --------------------------------- */
 /* Đảm bảo bố cục vẫn hoạt động trên màn hình nhỏ hơn */
 @media (max-width: 1600px) {
@@ -594,12 +727,43 @@
     height: 400px;
   }
   
+  /* Responsive cho loading */
+  .loading-overlay .spinner {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 12px;
+  }
+  
+  .loading-overlay .placeholder-text {
+    font-size: 1em;
+    padding: 0 15px;
+  }
+  
+  .placeholder-content .placeholder-icon {
+    font-size: 3em;
+  }
+  
   /* Điều chỉnh các nút cho mobile */
   .btn-download,
   .btn-delete,
   .btn-custom-request {
     padding: 12px 15px;
     font-size: 0.95em;
+  }
+  
+  /* Điều chỉnh nút render cho mobile */
+  .render-button {
+    padding: 12px 20px;
+    font-size: 1em;
+  }
+  
+  .render-button-loading {
+    gap: 8px;
+  }
+  
+  .render-spinner {
+    width: 16px;
+    height: 16px;
   }
 }
 
@@ -619,7 +783,6 @@
   
   /* Sticker gallery responsive */
   .sticker-gallery {
-    grid-template-columns: repeat(3, 1fr);
     max-height: 200px;
   }
   
@@ -638,10 +801,6 @@
     height: 300px;
   }
   
-  .sticker-gallery {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
   /* Các nút chiếm toàn bộ chiều rộng trên mobile */
   .secondary-buttons {
     flex-direction: column;
@@ -651,94 +810,19 @@
   .btn-delete {
     width: 100%;
   }
-}
-
-/* --------------------------------- */
-/* 6. Custom Request Modal */
-/* --------------------------------- */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.modal-backdrop.show {
-  opacity: 1;
-}
-
-.modal-content {
-  background-color: white;
-  padding: 30px;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 450px;
-  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
-  text-align: left;
-  transform: translateY(-50px);
-  transition: transform 0.3s ease, opacity 0.3s ease;
-  opacity: 0;
-}
-
-.modal-backdrop.show .modal-content {
-  transform: translateY(0);
-  opacity: 1;
-}
-
-.modal-title {
-  color: var(--color-secondary);
-  margin-bottom: 20px;
-  font-size: 1.5em;
-  border-bottom: 2px solid #eee;
-  padding-bottom: 10px;
-  font-weight: 700;
-}
-
-.modal-field {
-  margin-bottom: 15px;
-}
-
-.modal-label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 5px;
-  color: #333;
-}
-
-.modal-input,
-.modal-select,
-.modal-textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-sizing: border-box;
-  transition: border-color 0.2s;
-}
-
-.modal-textarea {
-  resize: vertical;
-}
-
-.modal-input:focus,
-.modal-select:focus,
-.modal-textarea:focus {
-  border-color: var(--color-primary);
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(82, 139, 139, 0.2);
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 25px;
+  
+  /* Điều chỉnh nút render cho mobile nhỏ */
+  .render-button {
+    padding: 10px 15px;
+    font-size: 0.95em;
+  }
+  
+  .render-button-loading {
+    gap: 6px;
+  }
+  
+  .render-spinner {
+    width: 14px;
+    height: 14px;
+  }
 }

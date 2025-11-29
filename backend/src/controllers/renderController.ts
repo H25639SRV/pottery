@@ -7,7 +7,6 @@ import * as renderService from "../services/renderService";
 
 const PUBLIC_DIR = path.join(__dirname, "../../public");
 const TEMPLATE_DIR = path.join(PUBLIC_DIR, "templates");
-// Định nghĩa thư mục Sticker
 const STICKER_DIR = path.join(PUBLIC_DIR, "sticker");
 const OUTPUT_DIR = path.join(PUBLIC_DIR, "render_output");
 
@@ -18,7 +17,7 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 }
 
 /**
- * Hàm mới: Chỉ vẽ pattern duy nhất, căn giữa và áp dụng fade dọc.
+ * Hàm mới: Pattern 50% chiều rộng bình, căn giữa, KHÔNG tràn đế
  */
 const warpPatternAdvanced = (
   patternImg: Image,
@@ -28,82 +27,62 @@ const warpPatternAdvanced = (
   const canvas = createCanvas(vaseWidth, vaseHeight);
   const ctx = canvas.getContext("2d");
 
-  const topPadding = 60;
-  const bottomPadding = 40;
+  // TĂNG PADDING để bảo vệ phần đế
+  const topPadding = 80;       // Tăng lên để đẩy pattern lên cao
+  const bottomPadding = 150;   // Tăng đáng kể để tránh phần đế
   const effectiveHeight = vaseHeight - topPadding - bottomPadding;
-  const baseOpacity = 1.0;
+  const baseOpacity = 0.7;
 
-  // 📐 TÍNH TOÁN KÍCH THƯỚC VÀ VỊ TRÍ CỦA MỘT PATTERN DUY NHẤT
-
+  // Kích thước pattern gốc
   const patternOriginalWidth = patternImg.width;
   const patternOriginalHeight = patternImg.height;
 
-  // Pattern chiếm khoảng 50% chiều rộng của bình
+  // KÍCH THƯỚC PATTERN: 50% chiều rộng bình
   const patternRenderWidth = vaseWidth * 0.5;
-  // Tính chiều cao pattern tương ứng để giữ tỉ lệ
   const patternRenderHeight =
     patternOriginalHeight * (patternRenderWidth / patternOriginalWidth);
 
-  // Vị trí đặt Pattern
-  const patternX = (vaseWidth - patternRenderWidth) / 2; // Căn giữa X
-  // Đặt Pattern giữa vùng hiệu dụng theo chiều dọc
-  const patternY = topPadding + (effectiveHeight - patternRenderHeight) / 2;
+  // QUAN TRỌNG: GIỚI HẠN CHIỀU CAO PATTERN để không tràn đế
+  let finalWidth = patternRenderWidth;
+  let finalHeight = patternRenderHeight;
 
-  // -------------------------------------------------------------
-  // VÒNG LẶP ĐỂ TẠO HIỆU ỨNG FADE THEO CHIỀU DỌC
-  // -------------------------------------------------------------
-
-  for (let y = 0; y < vaseHeight; y++) {
-    // Chỉ xử lý trong vùng hiệu dụng của bình
-    if (y < topPadding || y >= vaseHeight - bottomPadding) {
-      continue;
-    }
-
-    // 1. Tính toán hiệu ứng mờ dọc (Vertical Fade)
-    const normalizedY = (y - topPadding) / effectiveHeight;
-    let verticalOpacity: number = 1;
-    const verticalFadeRange = 0.15; // 15% trên và dưới
-
-    if (normalizedY < verticalFadeRange) {
-      verticalOpacity = normalizedY / verticalFadeRange;
-    } else if (normalizedY > 1 - verticalFadeRange) {
-      verticalOpacity = (1 - normalizedY) / verticalFadeRange;
-    }
-    verticalOpacity = Math.max(0.1, Math.min(1, verticalOpacity));
-
-    // 2. Tính toán Opacity cuối cùng
-    let opacity = verticalOpacity * baseOpacity;
-    ctx.globalAlpha = opacity;
-
-    // 3. VẼ HÀNG PIXEL (Pattern duy nhất)
-
-    // Kiểm tra xem y có nằm trong vùng pattern đã tính toán
-    if (y >= patternY && y < patternY + patternRenderHeight) {
-      // Tính toán vị trí pixel Y tương ứng trên ảnh Pattern gốc
-      const patternSourceY =
-        (y - patternY) * (patternOriginalHeight / patternRenderHeight);
-
-      // Vẽ 1 hàng pixel từ patternImg:
-      ctx.drawImage(
-        patternImg,
-        0, // Source X
-        patternSourceY, // Source Y: Vị trí Y tương ứng trên ảnh pattern
-        patternOriginalWidth, // Source Width
-        1, // Source Height
-
-        // Destination
-        patternX, // Dest X (Vị trí căn giữa)
-        y, // Dest Y
-        patternRenderWidth, // Dest Width (Chiều rộng đã scale)
-        1 // Dest Height
-      );
-    }
+  // Nếu pattern cao hơn 60% vùng hiệu dụng thì thu nhỏ theo chiều cao
+  const maxHeightRatio = 0.6; // Giảm từ 0.8 xuống 0.6
+  if (finalHeight > effectiveHeight * maxHeightRatio) {
+    finalHeight = effectiveHeight * maxHeightRatio;
+    finalWidth = patternOriginalWidth * (finalHeight / patternOriginalHeight);
+    console.log(`🔻 Pattern thu nhỏ để tránh tràn đế: ${finalWidth.toFixed(0)}x${finalHeight.toFixed(0)}`);
   }
+
+  // VỊ TRÍ CĂN GIỮA - ĐẨY CAO HƠN để tránh đế
+  const patternX = (vaseWidth - finalWidth) / 2;
+  // Sử dụng 0.4 thay vì 0.5 để pattern nằm cao hơn trong vùng hiệu dụng
+  const patternY = topPadding + (effectiveHeight - finalHeight) * 0.4;
+
+  console.log(`📐 Pattern: ${finalWidth.toFixed(0)}x${finalHeight.toFixed(0)}, vị trí Y: ${patternY.toFixed(0)}`);
+  console.log(`🛡️ Vùng an toàn: top=${topPadding}, bottom=${bottomPadding}, effective=${effectiveHeight}`);
+
+  // VẼ PATTERN VỚI OPACITY 70%
+  ctx.globalAlpha = baseOpacity;
+  ctx.drawImage(
+    patternImg,
+    0,
+    0,
+    patternOriginalWidth,
+    patternOriginalHeight,
+    patternX,
+    patternY,
+    finalWidth,
+    finalHeight
+  );
+
   ctx.globalAlpha = 1;
   return canvas;
 };
 
-// Hàm removeWhiteBackground (giữ nguyên)
+/**
+ * Hàm loại bỏ background trắng
+ */
 const removeWhiteBackground = async (
   patternBuffer: Buffer,
   threshold: number = 245
@@ -134,16 +113,23 @@ const removeWhiteBackground = async (
   }
 };
 
-// Hàm getPatternBrightness (giữ nguyên)
-const getPatternBrightness = async (patternBuffer: Buffer): Promise<number> => {
-  try {
-    const { dominant } = await sharp(patternBuffer).stats();
-    const avgBrightness = (dominant.r + dominant.g + dominant.b) / 3;
-    console.log(`📊 Pattern brightness: ${avgBrightness.toFixed(0)}`);
-    return avgBrightness;
-  } catch {
-    return 128;
+/**
+ * Hàm lấy đường dẫn template dựa trên templateName
+ */
+const getTemplatePath = (templateName: string): string => {
+  const baseUrl = "https://raw.githubusercontent.com/H25639SRV/pottery/refs/heads/main/frontend/public/render";
+  
+  const colorTemplates = [
+    "black.png", "blue.png", "brown.png", "gray.png", "green.png", 
+    "orange.png", "pink.png", "purple.png", "red.png", "yellow.png", "render.png"
+  ];
+  
+  if (colorTemplates.includes(templateName)) {
+    return `${baseUrl}/${templateName}`;
   }
+  
+  console.log(`⚠️ Template ${templateName} không được tìm thấy, sử dụng mặc định render.png`);
+  return `${baseUrl}/render.png`;
 };
 
 export const renderPattern = async (req: Request, res: Response) => {
@@ -163,7 +149,6 @@ export const renderPattern = async (req: Request, res: Response) => {
 
     // 🔑 LOGIC: Ưu tiên xử lý Sticker
     if (stickerPath) {
-      // --- Xử lý Sticker từ URL ---
       try {
         console.log(`🌐 Tải sticker từ URL: https://raw.githubusercontent.com/H25639SRV/pottery/refs/heads/main/backend/public/sticker/${stickerPath}`);
 
@@ -175,14 +160,7 @@ export const renderPattern = async (req: Request, res: Response) => {
 
         const arrayBuffer = await response.arrayBuffer();
         patternBuffer = Buffer.from(arrayBuffer);
-
-        // Lấy tên file từ URL
-        try {
-          patternFileName = path.basename(stickerPath) || "sticker.png";
-        } catch {
-          patternFileName = "sticker.png";
-        }
-
+        patternFileName = path.basename(stickerPath) || "sticker.png";
         fileSource = "Sticker (URL)";
         console.log(`✅ Đã tải sticker từ URL: ${stickerPath}`);
       } catch (stickerError: any) {
@@ -192,7 +170,6 @@ export const renderPattern = async (req: Request, res: Response) => {
         });
       }
     } else if (patternFile) {
-      // --- Xử lý File Upload ---
       patternFileName = patternFile.originalname || "unknown_pattern.png";
       tempFilePath = patternFile.path;
       fileSource = "Upload";
@@ -221,18 +198,11 @@ export const renderPattern = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Thiếu hoa văn hoặc sticker" });
     }
 
-    // const templatePath = path.join(TEMPLATE_DIR, templateName);
-    const templatePath =
-      "https://raw.githubusercontent.com/H25639SRV/pottery/refs/heads/main/backend/public/templates/render.png";
+    // Sử dụng hàm getTemplatePath để lấy đường dẫn template chính xác
+    const templatePath = getTemplatePath(templateName);
+    console.log(`🖼️ Sử dụng template: ${templatePath}`);
 
-    // if (!fs.existsSync(templatePath)) {
-    //   console.error(`❌ Không tìm thấy ảnh template: ${templatePath}`);
-    //   return res.status(404).json({ error: "Không tìm thấy ảnh template" });
-    // }
-
-    console.log(
-      "🎨 Bắt đầu render pattern (Quy trình 100% Canvas Composite)..."
-    );
+    console.log("🎨 Bắt đầu render pattern (Pattern 50% width, KHÔNG tràn đế)...");
 
     // --- [LOGIC CANVAS] ---
 
@@ -242,15 +212,6 @@ export const renderPattern = async (req: Request, res: Response) => {
       console.log("⚠️ Loại bỏ background trắng");
       patternBuffer = await removeWhiteBackground(patternBuffer);
     }
-    const patternBrightness = await getPatternBrightness(patternBuffer);
-    const isDarkPattern = patternBrightness < 100;
-
-    // 🔑 ĐIỀU CHỈNH: Làm rõ pattern hơn
-    console.log(`🔄 Modulating pattern...`);
-    patternBuffer = await sharp(patternBuffer)
-      // Tăng nhẹ độ sáng (brightness) và độ bão hòa (saturation)
-      .modulate({ brightness: 1.2, saturation: 1.1 })
-      .toBuffer();
 
     // 2. TẢI VÀO CANVAS
     console.log("🚀 Tải ảnh vào Canvas...");
@@ -261,8 +222,8 @@ export const renderPattern = async (req: Request, res: Response) => {
     const height = templateImg.height;
     console.log(`📏 Kích thước: ${width}x${height}`);
 
-    // 3. WARP
-    console.log(`🏺 Warping pattern (Single Pattern Logic)...`);
+    // 3. WARP PATTERN VỚI BẢO VỆ ĐẾ
+    console.log(`🏺 Warping pattern (50% width, bảo vệ đế)...`);
     const warpedCanvas = warpPatternAdvanced(patternImg, width, height);
 
     // 4. GHÉP BẰNG CANVAS
@@ -273,21 +234,20 @@ export const renderPattern = async (req: Request, res: Response) => {
     // Vẽ ảnh gốc (có lá) làm nền
     ctx.drawImage(templateImg, 0, 0, width, height);
 
-    // Đặt chế độ blend
-    let blendMode: any = "overlay";
-    if (isDarkPattern) {
-      blendMode = "overlay";
-    }
-    ctx.globalCompositeOperation = blendMode;
-
+    // Sử dụng blend mode "multiply" để tự nhiên hơn
+    ctx.globalCompositeOperation = "multiply";
+    
     // Vẽ hoa văn đã uốn (warped) lên trên
     ctx.drawImage(warpedCanvas, 0, 0, width, height);
+
+    // Reset composite operation
+    ctx.globalCompositeOperation = "source-over";
 
     // Lấy buffer kết quả từ Canvas
     const finalBuffer = mainCanvas.toBuffer("image/png");
 
-    // 5. CẮT (Dùng Sharp ở bước cuối)
-    console.log("✂️ Cắt ảnh (dùng Sharp)...");
+    // 5. CẮT CHÍNH GIỮA
+    console.log("✂️ Cắt ảnh chính giữa...");
     let sharpInstance = sharp(finalBuffer);
 
     const CROP_PX_SIDE = 16;
@@ -295,9 +255,7 @@ export const renderPattern = async (req: Request, res: Response) => {
     const cropHeight = height;
 
     if (cropWidth > 0 && cropHeight > 0) {
-      console.log(
-        `✅ Áp dụng crop: ${cropWidth}x${cropHeight}, left: ${CROP_PX_SIDE}`
-      );
+      console.log(`✅ Áp dụng crop chính giữa: ${cropWidth}x${cropHeight}, left: ${CROP_PX_SIDE}`);
       sharpInstance = sharpInstance.extract({
         left: CROP_PX_SIDE,
         top: 0,
@@ -305,13 +263,10 @@ export const renderPattern = async (req: Request, res: Response) => {
         height: cropHeight,
       });
     } else {
-      console.warn(
-        `⚠️ Bỏ qua crop. Kích thước gốc (${width}x${height}) quá nhỏ.`
-      );
+      console.warn(`⚠️ Bỏ qua crop. Kích thước gốc (${width}x${height}) quá nhỏ.`);
     }
 
     const finalResult = await sharpInstance.toBuffer();
-    // --- [KẾT THÚC CẮT] ---
 
     const filename = `render_${Date.now()}.png`;
     const filePath = path.join(OUTPUT_DIR, filename);
