@@ -32,7 +32,7 @@ console.log("✅ Khởi tạo server Mộc Gốm...");
 // Sẽ ưu tiên lấy từ biến môi trường CLIENT_URL. Nếu không có, sẽ sử dụng URL Vercel của bạn.
 const clientUrlString =
   process.env.CLIENT_URL || 
-  "http://localhost:3000,https://mocgom-m0blw53a9-h25639srvs-projects.vercel.app";
+  "http://localhost:3000,https://mocgom-m0blw53a9-h25639srvs-projects.vercel.app,http://www.mocgom.io.vn";
 
 const allowedOrigins = clientUrlString
   .split(",")
