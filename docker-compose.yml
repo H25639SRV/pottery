@@ -10,7 +10,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: pottery
-
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     healthcheck:
@@ -19,8 +18,8 @@ services:
       timeout: 5s
       retries: 5
     ports:
-      - "5432:5432" # Để truy cập DB từ host (ví dụ: DBeaver, Prisma Studio)
-
+      - "5432:5432" # Vẫn giữ để truy cập DB từ host nếu cần
+  
   # --------------------
   # 2. BACKEND SERVICE (Node.js/Express API)
   # --------------------
@@ -30,15 +29,17 @@ services:
       dockerfile: Dockerfile
     container_name: pottery-backend-1
     restart: always
-    # FIX: Khai báo rõ ràng file .env để load biến môi trường vào container
     env_file:
       - backend/.env
     depends_on:
       db:
         condition: service_healthy
+    # 🚨 SỬA: XÓA mapping cổng 5000 ra Host. Nginx sẽ truy cập nội bộ qua mạng Docker.
     ports:
-      - "5000:5000"
+    #   - "5000:5000" 
+    #   - "5555:5555" # Giữ lại nếu bạn cần truy cập Prisma Studio từ Host
       - "5555:5555"
+      
   # --------------------
   # 3. FRONTEND SERVICE (React/Nginx)
   # --------------------
@@ -47,20 +48,22 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-      - REACT_APP_API_URL=http://103.77.240.74:5000
-      - REACT_APP_CLIENT_URL=http://mocgom.io.vn
-      - REACT_APP_CHAT_API_URL=http://103.77.240.74:5000
+        # 📢 SỬA: Dùng đường dẫn tương đối /api và tên miền mới
+        - REACT_APP_API_URL=/api 
+        - REACT_APP_CLIENT_URL=http://mocgom.io.vn
+        - REACT_APP_CHAT_API_URL=/
     container_name: pottery-frontend-1
     restart: always
-    # FIX: Truyền biến API URL vào Frontend (dù đã có fallback)
     environment:
-      - REACT_APP_API_URL=http://103.77.240.74:5000
+      # 📢 SỬA: Dùng đường dẫn tương đối /api và tên miền mới
+      - REACT_APP_API_URL=/api
       - REACT_APP_CLIENT_URL=http://mocgom.io.vn
-      - REACT_APP_CHAT_API_URL=http://103.77.240.74:5000
+      - REACT_APP_CHAT_API_URL=/
     depends_on:
       - backend
+    # 🚨 SỬA: Map cổng 80 của container ra cổng 80 của Host
     ports:
-      - "8080:80"
+      - "80:80" 
 
 volumes:
   postgres_data:
